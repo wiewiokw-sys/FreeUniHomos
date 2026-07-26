@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UniHomos</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #10131a;
+    --bg-2: #171c26;
+    --panel: #1b202b;
+    --panel-border: #2a3140;
+    --accent: #f2a65a;
+    --accent-dim: #d88f45;
+    --tag: #5b8def;
+    --text: #f5f3ef;
+    --text-muted: #868c98;
+    --err: #e5665c;
+    --ok: #6fbf73;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+      radial-gradient(circle at 20% 15%, rgba(242,166,90,0.08), transparent 45%),
+      radial-gradient(circle at 85% 85%, rgba(91,141,239,0.08), transparent 45%),
+      var(--bg);
+    font-family: 'Inter', sans-serif;
+    color: var(--text);
+    padding: 24px;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 400px;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 28px;
+    padding: 30px 30px 28px;
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.6);
+  }
+
+  .logo-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+  .logo-dot {
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+    flex-shrink: 0;
+  }
+  .logo-text {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 18px;
+  }
+
+  .tabs {
+    display: flex;
+    background: var(--bg-2);
+    border: 1px solid var(--panel-border);
+    border-radius: 16px;
+    padding: 4px;
+    margin-bottom: 22px;
+  }
+  .tab-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 10px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .tab-btn.active {
+    background: var(--accent);
+    color: #1a1200;
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 22px;
+    margin: 0 0 6px;
+  }
+
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 13.5px;
+    margin: 0 0 22px;
+    line-height: 1.4;
+  }
+
+  .field { margin-bottom: 16px; }
+
+  .field label {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 7px;
+    letter-spacing: 0.02em;
+  }
+
+  .input-wrap { position: relative; }
+
+  input {
+    width: 100%;
+    background: var(--bg-2);
+    border: 1.5px solid var(--panel-border);
+    border-radius: 16px;
+    padding: 13px 16px;
+    font-size: 15px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    font-family: 'Inter', sans-serif;
+  }
+
+  input.mono { font-family: 'JetBrains Mono', monospace; padding-left: 26px; }
+
+  .at-sign {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--tag);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    pointer-events: none;
+  }
+
+  input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(242,166,90,0.15);
+  }
+
+  input.invalid { border-color: var(--err); }
+
+  .hint {
+    font-size: 12px;
+    margin-top: 6px;
+    min-height: 15px;
+    color: var(--text-muted);
+  }
+  .hint.error { color: var(--err); }
+
+  button.primary {
+    width: 100%;
+    padding: 14px;
+    border-radius: 16px;
+    border: none;
+    background: var(--accent);
+    color: #1a1200;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 6px;
+    transition: background 0.15s ease, opacity 0.15s ease;
+    font-family: 'Inter', sans-serif;
+  }
+  button.primary:disabled {
+    background: var(--panel-border);
+    color: var(--text-muted);
+    cursor: not-allowed;
+  }
+  button.primary:not(:disabled):hover { background: var(--accent-dim); }
+
+  .form-msg {
+    font-size: 13px;
+    margin-top: 12px;
+    min-height: 16px;
+    text-align: center;
+  }
+  .form-msg.error { color: var(--err); }
+  .form-msg.loading { color: var(--text-muted); }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* --- Success screen (shows generated ID) --- */
+  .success-box { text-align: center; padding: 6px 0 4px; }
+  .success-check {
+    width: 54px; height: 54px;
+    border-radius: 50%;
+    background: rgba(111,191,115,0.15);
+    color: var(--ok);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 18px;
+    font-size: 26px;
+  }
+  .id-label {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  .id-box {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    letter-spacing: 0.12em;
+    background: var(--bg-2);
+    border: 1.5px dashed var(--panel-border);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 10px;
+    color: var(--accent);
+    word-break: break-all;
+  }
+  .id-copy-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 22px;
+  }
+  .id-copy-hint.copied { color: var(--ok); }
+</style>
+</head>
+<body>
+
+<div class="card">
+
+  <div class="logo-row">
+    <div class="logo-dot"></div>
+    <div class="logo-text">UniHomos</div>
+  </div>
+
+  <!-- ===================== TABS ===================== -->
+  <div class="tabs" id="tabsRow">
+    <button class="tab-btn active" id="tabLogin">Вхід</button>
+    <button class="tab-btn" id="tabRegister">Реєстрація</button>
+  </div>
+
+  <!-- ===================== LOGIN PANEL ===================== -->
+  <div class="panel active" id="panelLogin">
+    <h1>З поверненням</h1>
+    <p class="subtitle">Введіть @хендл або ваш ID та пароль.</p>
+
+    <div class="field">
+      <label>Хендл або ID</label>
+      <div class="input-wrap">
+        <input type="text" id="loginIdentifier" placeholder="@handle або ABCD1234WXYZ" maxlength="24">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Пароль</label>
+      <div class="input-wrap">
+        <input type="password" id="loginPassword" placeholder="Пароль" maxlength="64">
+      </div>
+    </div>
+
+    <button class="primary" id="loginBtn">Увійти</button>
+    <div class="form-msg" id="loginMsg"></div>
+  </div>
+
+  <!-- ===================== REGISTER PANEL ===================== -->
+  <div class="panel" id="panelRegister">
+    <h1>Створити акаунт</h1>
+    <p class="subtitle">Так вас будуть бачити і знаходити інші.</p>
+
+    <div class="field">
+      <label>Ім'я</label>
+      <div class="input-wrap">
+        <input type="text" id="regName" placeholder="напр. Іван" maxlength="30">
+      </div>
+      <div class="hint" id="nameHint">Будь-яка мова</div>
+    </div>
+
+    <div class="field">
+      <label>Хендл</label>
+      <div class="input-wrap">
+        <span class="at-sign">@</span>
+        <input type="text" class="mono" id="regHandle" placeholder="ivan_92" maxlength="24">
+      </div>
+      <div class="hint" id="handleHint">Тільки латинські літери, цифри, _ та -</div>
+    </div>
+
+    <div class="field">
+      <label>Пароль</label>
+      <div class="input-wrap">
+        <input type="password" id="regPassword" placeholder="Мінімум 4 символи" maxlength="64">
+      </div>
+    </div>
+
+    <button class="primary" id="registerBtn" disabled>Зареєструватися</button>
+    <div class="form-msg" id="registerMsg"></div>
+  </div>
+
+  <!-- ===================== SUCCESS PANEL (shows generated ID) ===================== -->
+  <div class="panel" id="panelSuccess">
+    <div class="success-box">
+      <div class="success-check">✓</div>
+      <h1 style="margin-bottom:16px;">Акаунт створено!</h1>
+      <div class="id-label">Ваш особистий ID (запам'ятайте або збережіть — він знадобиться для входу):</div>
+      <div class="id-box" id="generatedId">—</div>
+      <div class="id-copy-hint" id="copyHint">Натисніть, щоб скопіювати</div>
+      <button class="primary" id="continueAfterRegister">Продовжити</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Адреса нашого сервера на Render
+  const API_BASE = 'https://freeunihomos.onrender.com';
+
+  const tabLogin = document.getElementById('tabLogin');
+  const tabRegister = document.getElementById('tabRegister');
+  const panelLogin = document.getElementById('panelLogin');
+  const panelRegister = document.getElementById('panelRegister');
+  const panelSuccess = document.getElementById('panelSuccess');
+  const tabsRow = document.getElementById('tabsRow');
+
+  function showPanel(which) {
+    [panelLogin, panelRegister, panelSuccess].forEach(p => p.classList.remove('active'));
+    if (which === 'login') { panelLogin.classList.add('active'); tabsRow.style.display = 'flex'; }
+    if (which === 'register') { panelRegister.classList.add('active'); tabsRow.style.display = 'flex'; }
+    if (which === 'success') { panelSuccess.classList.add('active'); tabsRow.style.display = 'none'; }
+  }
+
+  tabLogin.addEventListener('click', () => {
+    tabLogin.classList.add('active');
+    tabRegister.classList.remove('active');
+    showPanel('login');
+  });
+  tabRegister.addEventListener('click', () => {
+    tabRegister.classList.add('active');
+    tabLogin.classList.remove('active');
+    showPanel('register');
+  });
+
+  // ---------------- REGISTER FORM ----------------
+  const regName = document.getElementById('regName');
+  const regHandle = document.getElementById('regHandle');
+  const regPassword = document.getElementById('regPassword');
+  const registerBtn = document.getElementById('registerBtn');
+  const registerMsg = document.getElementById('registerMsg');
+  const nameHint = document.getElementById('nameHint');
+  const handleHint = document.getElementById('handleHint');
+
+  function sanitizeHandle() {
+    const raw = regHandle.value;
+    const clean = raw.replace(/[^A-Za-z0-9_-]/g, '');
+    regHandle.value = clean;
+    handleHint.textContent = clean !== raw
+      ? 'Тільки латинські літери, цифри, _ та -'
+      : 'Тільки латинські літери, цифри, _ та -';
+    handleHint.classList.toggle('error', clean !== raw);
+  }
+
+  function updateRegisterButton() {
+    const nameOk = regName.value.trim().length >= 2;
+    const handleOk = regHandle.value.length >= 3;
+    const passOk = regPassword.value.length >= 4;
+    registerBtn.disabled = !(nameOk && handleOk && passOk);
+  }
+
+  regName.addEventListener('input', updateRegisterButton);
+  regHandle.addEventListener('input', () => { sanitizeHandle(); updateRegisterButton(); });
+  regPassword.addEventListener('input', updateRegisterButton);
+
+  registerBtn.addEventListener('click', async () => {
+    registerMsg.textContent = 'Реєструємо...';
+    registerMsg.className = 'form-msg loading';
+    registerBtn.disabled = true;
+
+    try {
+      const res = await fetch(API_BASE + '/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: regName.value.trim(),
+          handle: regHandle.value.trim(),
+          password: regPassword.value
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        registerMsg.textContent = data.detail || 'Помилка реєстрації';
+        registerMsg.className = 'form-msg error';
+        updateRegisterButton();
+        return;
+      }
+
+      // Зберігаємо дані користувача локально (в браузері), щоб не питати логін щоразу
+      localStorage.setItem('unihomos_user', JSON.stringify(data));
+
+      document.getElementById('generatedId').textContent = data.public_id;
+      registerMsg.textContent = '';
+      showPanel('success');
+
+    } catch (err) {
+      registerMsg.textContent = 'Немає з\'єднання із сервером. Спробуйте ще раз.';
+      registerMsg.className = 'form-msg error';
+      updateRegisterButton();
+    }
+  });
+
+  // Копіювання ID по кліку
+  document.getElementById('generatedId').addEventListener('click', () => {
+    const idText = document.getElementById('generatedId').textContent;
+    navigator.clipboard.writeText(idText).then(() => {
+      const hint = document.getElementById('copyHint');
+      hint.textContent = 'Скопійовано ✓';
+      hint.classList.add('copied');
+    });
+  });
+
+  document.getElementById('continueAfterRegister').addEventListener('click', () => {
+    // Тут пізніше буде перехід у сам додаток (app.html)
+    window.location.href = 'app.html';
+  });
+
+  // ---------------- LOGIN FORM ----------------
+  const loginIdentifier = document.getElementById('loginIdentifier');
+  const loginPassword = document.getElementById('loginPassword');
+  const loginBtn = document.getElementById('loginBtn');
+  const loginMsg = document.getElementById('loginMsg');
+
+  loginBtn.addEventListener('click', async () => {
+    if (!loginIdentifier.value.trim() || !loginPassword.value) {
+      loginMsg.textContent = 'Заповніть обидва поля';
+      loginMsg.className = 'form-msg error';
+      return;
+    }
+
+    loginMsg.textContent = 'Входимо...';
+    loginMsg.className = 'form-msg loading';
+    loginBtn.disabled = true;
+
+    try {
+      const res = await fetch(API_BASE + '/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          identifier: loginIdentifier.value.trim(),
+          password: loginPassword.value
+        })
+      });
+
+      const data = await res.json();
+      loginBtn.disabled = false;
+
+      if (!res.ok) {
+        loginMsg.textContent = data.detail || 'Невірний хендл/ID або пароль';
+        loginMsg.className = 'form-msg error';
+        return;
+      }
+
+      localStorage.setItem('unihomos_user', JSON.stringify(data));
+      loginMsg.textContent = '';
+      window.location.href = 'app.html';
+
+    } catch (err) {
+      loginBtn.disabled = false;
+      loginMsg.textContent = 'Немає з\'єднання із сервером. Спробуйте ще раз.';
+      loginMsg.className = 'form-msg error';
+    }
+  });
+
+  // Якщо користувач уже заходив раніше (дані є в браузері) — одразу в додаток
+  const savedUser = localStorage.getItem('unihomos_user');
+  if (savedUser) {
+    // Не робимо авто-редірект тут навмисно, щоб можна було спокійно тестувати екран.
+    // (Коли будемо підключати реальний перехід між сторінками — розкоментуємо.)
+    // window.location.href = 'app.html';
+  }
+</script>
+
+</body>
+</html>
