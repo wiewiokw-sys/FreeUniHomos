@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Messenger</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #10131a;
+    --bg-2: #171c26;
+    --panel: #1b202b;
+    --panel-border: #2a3140;
+    --accent: #f2a65a;
+    --accent-dim: #d88f45;
+    --tag: #5b8def;
+    --text: #f5f3ef;
+    --text-muted: #868c98;
+    --err: #e5665c;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); }
+  body {
+    font-family: 'Inter', sans-serif;
+    color: var(--text);
+  }
+
+  .phone {
+    max-width: 420px;
+    height: 100vh;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 20% 10%, rgba(242,166,90,0.07), transparent 45%),
+      radial-gradient(circle at 85% 90%, rgba(91,141,239,0.07), transparent 45%),
+      var(--bg);
+  }
+
+  /* ---------- top bar (lang) ---------- */
+  .topline {
+    position: absolute;
+    top: 10px; right: 14px;
+    z-index: 30;
+  }
+  .lang-pill {
+    display: flex;
+    background: var(--bg-2);
+    border: 1px solid var(--panel-border);
+    border-radius: 999px;
+    padding: 3px;
+  }
+  .lang-pill button {
+    border: none; background: transparent; color: var(--text-muted);
+    font-size: 11px; font-weight: 600; padding: 5px 11px; border-radius: 999px;
+    cursor: pointer; font-family: 'Inter', sans-serif;
+  }
+  .lang-pill button.active { background: var(--accent); color: #1a1200; }
+
+  /* ---------- swipe track ---------- */
+  .track {
+    display: flex;
+    width: 300%;
+    height: 100%;
+    transition: transform 0.32s cubic-bezier(.22,.61,.36,1);
+    touch-action: pan-y;
+  }
+  .screen {
+    width: 33.3333%;
+    height: 100%;
+    overflow-y: auto;
+    padding: 56px 18px 90px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* dots */
+  .dots {
+    position: absolute;
+    bottom: 14px; left: 0; right: 0;
+    display: flex; justify-content: center; gap: 7px;
+    z-index: 30;
+  }
+  .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--panel-border); cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+  .dot.active { background: var(--accent); transform: scale(1.25); }
+
+  /* ---------- search bar (home) ---------- */
+  .search-wrap { position: relative; margin-bottom: 22px; }
+  .search-bar {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--bg-2); border: 1.5px solid var(--panel-border);
+    border-radius: 16px; padding: 11px 14px;
+  }
+  .search-bar svg { flex-shrink: 0; opacity: 0.55; }
+  .search-bar input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: var(--text); font-size: 14.5px; font-family: 'JetBrains Mono', monospace;
+  }
+  .search-bar input::placeholder { font-family: 'Inter', sans-serif; color: var(--text-muted); }
+
+  .search-results {
+    margin-top: 8px;
+    background: var(--panel); border: 1px solid var(--panel-border);
+    border-radius: 14px; overflow: hidden; display: none;
+  }
+  .search-results.show { display: block; }
+  .result-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 14px; border-bottom: 1px solid var(--panel-border);
+    cursor: pointer;
+  }
+  .result-row:last-child { border-bottom: none; }
+  .result-row:hover { background: var(--bg-2); }
+  .result-avatar {
+    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--tag), #3a5fc9);
+  }
+  .result-avatar.channel { background: linear-gradient(135deg, var(--accent), var(--accent-dim)); }
+  .result-name { font-size: 13.5px; font-weight: 600; }
+  .result-handle { font-size: 12px; color: var(--tag); font-family: 'JetBrains Mono', monospace; }
+  .empty-row {
+    padding: 16px 14px; text-align: center; color: var(--text-muted); font-size: 13px;
+  }
+
+  /* ---------- home center buttons ---------- */
+  .greeting { font-family: 'Fraunces', serif; font-size: 21px; margin: 4px 0 22px; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .action-card {
+    background: var(--panel); border: 1px solid var(--panel-border);
+    border-radius: 20px; padding: 20px 14px; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
+    transition: border-color 0.15s ease, grid-column 0.2s ease;
+  }
+  .action-card:hover { border-color: var(--accent); }
+  .action-card .icon-circle {
+    width: 42px; height: 42px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg-2);
+  }
+  .action-card .label { font-size: 13px; font-weight: 600; }
+
+  .action-card.expanded {
+    grid-column: 1 / -1;
+    align-items: stretch;
+    text-align: left;
+    cursor: default;
+    padding: 18px 16px;
+  }
+  .action-card.hidden-sibling { display: none; }
+
+  .create-form { margin-top: 14px; display: none; }
+  .action-card.expanded .create-form { display: block; }
+  .action-card.expanded .expand-hint { display: none; }
+  .action-card.expanded .icon-row { display: flex; align-items: center; justify-content: space-between; }
+
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block; font-size: 11.5px; font-weight: 600; color: var(--text-muted);
+    margin-bottom: 6px; letter-spacing: 0.02em;
+  }
+  input.form-input {
+    width: 100%; background: var(--bg-2); border: 1.5px solid var(--panel-border);
+    border-radius: 14px; padding: 11px 14px; font-size: 14px; color: var(--text);
+    outline: none; font-family: 'Inter', sans-serif;
+  }
+  input.form-input:focus { border-color: var(--accent); }
+  input.form-input.invalid { border-color: var(--err); }
+
+  .handle-row { display: flex; align-items: stretch; }
+  .handle-prefix {
+    display: flex; align-items: center;
+    background: var(--bg-2); border: 1.5px solid var(--panel-border); border-right: none;
+    border-radius: 14px 0 0 14px; padding: 0 10px 0 14px;
+    color: var(--tag); font-family: 'JetBrains Mono', monospace; font-size: 14px;
+  }
+  .handle-row input {
+    border-radius: 0 14px 14px 0;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .hint-small { font-size: 11.5px; color: var(--text-muted); margin-top: 5px; }
+  .hint-small.error { color: var(--err); }
+
+  .form-buttons { display: flex; gap: 10px; margin-top: 4px; }
+  button.btn {
+    border: none; border-radius: 13px; padding: 11px 16px; font-size: 13.5px;
+    font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif;
+  }
+  button.btn.primary { background: var(--accent); color: #1a1200; flex: 1; }
+  button.btn.primary:disabled { background: var(--panel-border); color: var(--text-muted); cursor: not-allowed; }
+  button.btn.ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--panel-border); }
+
+  /* ---------- friends screen ---------- */
+  .friends-title { font-family: 'Fraunces', serif; font-size: 21px; margin: 4px 0 18px; }
+  .friend-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 6px; border-bottom: 1px solid var(--panel-border);
+  }
+  .friend-avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, var(--tag), #3a5fc9); flex-shrink: 0; }
+  .friend-name { font-size: 14px; font-weight: 600; }
+  .friend-handle { font-size: 12px; color: var(--tag); font-family: 'JetBrains Mono', monospace; }
+  .empty-state { text-align: center; margin-top: 60px; color: var(--text-muted); font-size: 13.5px; padding: 0 20px; line-height: 1.5; }
+  .empty-state .big { font-size: 32px; margin-bottom: 10px; }
+
+  /* ---------- profile screen ---------- */
+  .profile-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 26px; }
+  .avatar-wrap {
+    width: 84px; height: 84px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+    position: relative; cursor: pointer; margin-bottom: 10px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .avatar-wrap img { width: 100%; height: 100%; object-fit: cover; }
+  .avatar-wrap .cam-badge {
+    position: absolute; bottom: -2px; right: -2px;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--bg-2); border: 2px solid var(--bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .name-row { display: flex; align-items: center; gap: 6px; }
+  .profile-name { font-family: 'Fraunces', serif; font-size: 19px; }
+  .sticker-lock {
+    width: 20px; height: 20px; border-radius: 6px;
+    background: var(--bg-2); border: 1px solid var(--panel-border);
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .profile-handle { color: var(--tag); font-family: 'JetBrains Mono', monospace; font-size: 12.5px; margin-top: 3px; }
+
+  .section-title { font-size: 11.5px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.04em; text-transform: uppercase; margin: 22px 0 10px; }
+
+  .settings-row {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--panel); border: 1px solid var(--panel-border);
+    border-radius: 16px; padding: 13px 15px; margin-bottom: 10px; cursor: pointer;
+  }
+  .settings-row .left { display: flex; align-items: center; gap: 10px; font-size: 13.5px; }
+  .settings-row .chev { color: var(--text-muted); }
+
+  .story-composer { display: none; margin-top: 12px; }
+  .story-composer.show { display: block; }
+  textarea.story-text {
+    width: 100%; min-height: 90px; background: var(--bg-2); border: 1.5px solid var(--panel-border);
+    border-radius: 14px; padding: 12px 14px; color: var(--text); font-family: 'Inter', sans-serif;
+    font-size: 13.5px; outline: none; resize: none;
+  }
+  textarea.story-text:focus { border-color: var(--accent); }
+  .char-count { text-align: right; font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+  .story-photo-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: var(--bg-2); border: 1.5px dashed var(--panel-border);
+    border-radius: 14px; padding: 16px; margin-bottom: 10px; cursor: pointer;
+    font-size: 12.5px; color: var(--text-muted);
+  }
+  .story-preview { width: 100%; border-radius: 14px; margin-bottom: 10px; display: none; max-height: 160px; object-fit: cover; }
+</style>
+</head>
+<body>
+
+<div class="phone">
+
+  <div class="topline">
+    <div class="lang-pill">
+      <button id="btnEn" class="active">EN</button>
+      <button id="btnRu">RU</button>
+    </div>
+  </div>
+
+  <div class="track" id="track">
+
+    <!-- SCREEN 2: FRIENDS (left) -->
+    <div class="screen" id="screenFriends">
+      <div class="friends-title" data-en="Friends" data-ru="Друзья">Friends</div>
+      <div id="friendsList"></div>
+      <div class="empty-state" id="friendsEmpty">
+        <div class="big">🫥</div>
+        <div data-en="No friends yet. Add someone using the search on the home screen." data-ru="Пока нет друзей. Добавьте кого-нибудь через поиск на главном экране.">
+          No friends yet. Add someone using the search on the home screen.
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 1: HOME (center) -->
+    <div class="screen" id="screenHome">
+      <div class="search-wrap">
+        <div class="search-bar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="searchInput" data-en-ph="@handle to join a chat or channel" data-ru-ph="@ник чата или канала" placeholder="@handle to join a chat or channel">
+        </div>
+        <div class="search-results" id="searchResults"></div>
+      </div>
+
+      <div class="greeting" data-en="What do you want to do?" data-ru="Что будем делать?">What do you want to do?</div>
+
+      <div class="grid" id="actionGrid">
+
+        <div class="action-card" id="cardFriend">
+          <div class="icon-circle">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f2a65a" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+          </div>
+          <div class="label" data-en="Add friend" data-ru="Добавить друга">Add friend</div>
+        </div>
+
+        <div class="action-card" id="cardChannel">
+          <div class="icon-row">
+            <div class="icon-circle">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f2a65a" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+            </div>
+          </div>
+          <div class="label expand-hint" data-en="Create channel" data-ru="Создать канал">Create channel</div>
+          <div class="create-form" id="formChannel">
+            <div class="field">
+              <label data-en="Channel name (any language)" data-ru="Название канала (любой язык)">Channel name (any language)</label>
+              <input class="form-input" id="channelName" maxlength="40" data-en-ph="e.g. Morning News" data-ru-ph="напр. Утренние новости" placeholder="e.g. Morning News">
+            </div>
+            <div class="field">
+              <label data-en="Handle" data-ru="Юзернейм">Handle</label>
+              <div class="handle-row">
+                <div class="handle-prefix">@channel</div>
+                <input class="form-input" id="channelHandle" maxlength="24" placeholder="myname">
+              </div>
+              <div class="hint-small" id="channelHandleHint" data-en="Latin letters, numbers, _ and - only" data-ru="Только латинские буквы, цифры, _ и -">Latin letters, numbers, _ and - only</div>
+            </div>
+            <div class="form-buttons">
+              <button class="btn primary" id="channelCreateBtn" disabled data-en="Create" data-ru="Создать">Create</button>
+              <button class="btn ghost" onclick="collapseCard('cardChannel', event)" data-en="Cancel" data-ru="Отмена">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="action-card" id="cardGroup">
+          <div class="icon-row">
+            <div class="icon-circle">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f2a65a" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+          </div>
+          <div class="label expand-hint" data-en="Create group" data-ru="Создать группу">Create group</div>
+          <div class="create-form" id="formGroup">
+            <div class="field">
+              <label data-en="Group name (any language)" data-ru="Название группы (любой язык)">Group name (any language)</label>
+              <input class="form-input" id="groupName" maxlength="40" data-en-ph="e.g. Weekend Trip" data-ru-ph="напр. Поездка на выходные" placeholder="e.g. Weekend Trip">
+            </div>
+            <div class="field">
+              <label data-en="Handle" data-ru="Юзернейм">Handle</label>
+              <div class="handle-row">
+                <div class="handle-prefix">@chat</div>
+                <input class="form-input" id="groupHandle" maxlength="24" placeholder="myname">
+              </div>
+              <div class="hint-small" id="groupHandleHint" data-en="Latin letters, numbers, _ and - only" data-ru="Только латинские буквы, цифры, _ и -">Latin letters, numbers, _ and - only</div>
+            </div>
+            <div class="form-buttons">
+              <button class="btn primary" id="groupCreateBtn" disabled data-en="Create" data-ru="Создать">Create</button>
+              <button class="btn ghost" onclick="collapseCard('cardGroup', event)" data-en="Cancel" data-ru="Отмена">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="action-card" id="cardPost">
+          <div class="icon-circle">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f2a65a" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </div>
+          <div class="label" data-en="Create post" data-ru="Создать пост">Create post</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SCREEN 3: PROFILE (right) -->
+    <div class="screen" id="screenProfile">
+      <div class="profile-header">
+        <label class="avatar-wrap" id="avatarWrap" for="avatarFile">
+          <img id="avatarImg" style="display:none;">
+          <svg id="avatarPlaceholder" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#1a1200" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
+          <div class="cam-badge">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#f2a65a" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </div>
+        </label>
+        <input type="file" id="avatarFile" accept="image/*" style="display:none;">
+        <div class="name-row">
+          <div class="profile-name" id="profileNameDisplay">Your name</div>
+          <div class="sticker-lock" title="Premium feature">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#868c98" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+        </div>
+        <div class="profile-handle" id="profileHandleDisplay">@handle</div>
+      </div>
+
+      <div class="section-title" data-en="Edit profile" data-ru="Редактировать профиль">Edit profile</div>
+
+      <div class="field">
+        <label data-en="Name (any language)" data-ru="Имя (любой язык)">Name (any language)</label>
+        <input class="form-input" id="profileNameInput" maxlength="30" placeholder="Your name">
+      </div>
+
+      <div class="field">
+        <label data-en="Handle" data-ru="Юзернейм">Handle</label>
+        <input class="form-input" id="profileHandleInput" maxlength="24" placeholder="handle">
+        <div class="hint-small" data-en="Latin letters, numbers, _ and - only" data-ru="Только латинские буквы, цифры, _ и -">Latin letters, numbers, _ and - only</div>
+      </div>
+
+      <div class="section-title" data-en="Story" data-ru="История">Story</div>
+
+      <div class="settings-row" id="storyToggleRow">
+        <div class="left">
+          <span data-en="Post a story" data-ru="Опубликовать историю">Post a story</span>
+        </div>
+        <span class="chev">+</span>
+      </div>
+
+      <div class="story-composer" id="storyComposer">
+        <label class="story-photo-btn" id="storyPhotoBtn" for="storyFile" data-en="Tap to add a photo" data-ru="Нажмите, чтобы добавить фото">Tap to add a photo</label>
+        <input type="file" id="storyFile" accept="image/*" style="display:none;">
+        <img id="storyPreview" class="story-preview">
+        <textarea class="story-text" id="storyText" maxlength="300" data-en-ph="Say something... (max 300 characters)" data-ru-ph="Напишите что-нибудь... (макс. 300 символов)" placeholder="Say something... (max 300 characters)"></textarea>
+        <div class="char-count"><span id="charCount">0</span>/300</div>
+        <div class="form-buttons">
+          <button class="btn primary" id="storyPublishBtn" data-en="Publish" data-ru="Опубликовать">Publish</button>
+          <button class="btn ghost" id="storyCancelBtn" data-en="Cancel" data-ru="Отмена">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="dots">
+    <div cla
