@@ -286,10 +286,10 @@
 
       <div class="auth-panel active" id="panelLogin">
         <h1>З поверненням</h1>
-        <p class="subtitle">Введіть @хендл або ваш ID та пароль.</p>
+        <p class="subtitle">Введіть @хендл та пароль.</p>
         <div class="field">
-          <label>Хендл або ID</label>
-          <input type="text" id="loginIdentifier" placeholder="@handle або ABCD1234WXYZ" maxlength="24">
+          <label>Хендл</label>
+          <input type="text" id="loginIdentifier" placeholder="@handle" maxlength="20">
         </div>
         <div class="field">
           <label>Пароль</label>
@@ -310,7 +310,7 @@
           <label>Хендл</label>
           <div class="input-wrap">
             <span class="at-sign">@</span>
-            <input type="text" class="mono" id="regHandle" placeholder="ivan_92" maxlength="24">
+            <input type="text" class="mono" id="regHandle" placeholder="ivan_92" maxlength="20">
           </div>
           <div class="hint" id="handleHint">Тільки латинські літери, цифри, _ та -</div>
         </div>
@@ -357,7 +357,7 @@
         <div class="home-search">
           <div class="search-input-wrap">
             <span class="search-icon">🔍</span>
-            <input type="text" id="homeSearchInput" placeholder="Пошук за @хендлом або ID">
+            <input type="text" id="homeSearchInput" placeholder="Пошук за @хендлом">
           </div>
         </div>
         <div class="search-results" id="homeSearchResults"></div>
@@ -382,4 +382,4 @@
             <div class="a-icon">💬</div>
             <div class="a-label a-collapsed-hint">Створити чат</div>
             <div class="action-form">
-              <div class="field"><label>Назва чату</label><i
+              <div class="field"><label>Назва чату</label><input type="text" id="chatName" maxlength="
