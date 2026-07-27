@@ -37,6 +37,7 @@ MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017")
 client = MongoClient(MONGO_URI)
 db = client["unihomos"]          # назва бази даних
 users = db["users"]              # колекція (як таблиця) для користувачів
+messages = db["messages"]        # колекція для повідомлень між користувачами
 
 
 # ---------------------------------------------------------------------------
@@ -112,6 +113,26 @@ class LoginResponse(BaseModel):
     handle: str
 
 
+class SendMessageRequest(BaseModel):
+    from_handle: str
+    to_handle: str
+    type: str            # "text" | "photo" | "voice"
+    content: str          # текст, або base64 фото/аудіо
+    time: str             # "ГГ:ХХ" — час, показаний на екрані
+    duration: str = ""    # тривалість голосового, якщо type == "voice"
+
+
+class MessageOut(BaseModel):
+    message_id: str
+    from_handle: str
+    to_handle: str
+    type: str
+    content: str
+    time: str
+    duration: str
+    status: str
+
+
 # ---------------------------------------------------------------------------
 # 6. Маршрути (endpoints)
 # ---------------------------------------------------------------------------
@@ -174,6 +195,19 @@ def login_user(payload: LoginRequest):
     )
 
 
+@app.get("/search/users")
+def search_users(q: str):
+    """Пошук людей, чий хендл починається на введений текст (для рядка пошуку)."""
+    q = q.strip().lower().lstrip("@")
+    if not q:
+        return []
+    cursor = users.find(
+        {"handle": {"$regex": "^" + re.escape(q)}},
+        {"_id": 0, "password_hash": 0, "salt": 0},
+    ).limit(20)
+    return list(cursor)
+
+
 @app.get("/users/{handle}")
 def find_user(handle: str):
     """Пошук користувача за хендлом (для функції пошуку в додатку)."""
@@ -185,3 +219,76 @@ def find_user(handle: str):
     if not user:
         raise HTTPException(status_code=404, detail="Not found")
     return user
+
+
+# ---------------------------------------------------------------------------
+# 7. Повідомлення між двома користувачами (особисті чати)
+# ---------------------------------------------------------------------------
+
+def chat_key(handle_a: str, handle_b: str) -> str:
+    """Однакова 'назва кімнати' незалежно від того, хто кому пише першим."""
+    return "|".join(sorted([handle_a, handle_b]))
+
+
+@app.post("/messages/send", response_model=MessageOut)
+def send_message(payload: SendMessageRequest):
+    from_handle = payload.from_handle.strip().lower().lstrip("@")
+    to_handle = payload.to_handle.strip().lower().lstrip("@")
+
+    if not users.find_one({"handle": from_handle}):
+        raise HTTPException(status_code=404, detail="Sender not found")
+    if not users.find_one({"handle": to_handle}):
+        raise HTTPException(status_code=404, detail="Recipient not found")
+
+    message_id = str(uuid.uuid4())
+    doc = {
+        "message_id": message_id,
+        "chat_key": chat_key(from_handle, to_handle),
+        "from_handle": from_handle,
+        "to_handle": to_handle,
+        "type": payload.type,
+        "content": payload.content,
+        "time": payload.time,
+        "duration": payload.duration,
+        "status": "sent",
+    }
+    messages.insert_one(doc)
+
+    return MessageOut(
+        message_id=message_id, from_handle=from_handle, to_handle=to_handle,
+        type=payload.type, content=payload.content, time=payload.time,
+        duration=payload.duration, status="sent",
+    )
+
+
+@app.get("/messages/{handle_a}/{handle_b}", response_model=list[MessageOut])
+def get_conversation(handle_a: str, handle_b: str):
+    """Повертає всю історію листування між двома людьми (для оновлення екрана)."""
+    key = chat_key(handle_a.strip().lower().lstrip("@"), handle_b.strip().lower().lstrip("@"))
+    docs = messages.find({"chat_key": key}, {"_id": 0}).sort("_id", 1)
+    return [
+        MessageOut(
+            message_id=d["message_id"], from_handle=d["from_handle"], to_handle=d["to_handle"],
+            type=d["type"], content=d["content"], time=d["time"],
+            duration=d.get("duration", ""), status=d["status"],
+        )
+        for d in docs
+    ]
+
+
+class MarkReadRequest(BaseModel):
+    reader_handle: str
+    other_handle: str
+
+
+@app.post("/messages/mark_read")
+def mark_read(payload: MarkReadRequest):
+    """Позначає прочитаними всі повідомлення, надіслані МЕНІ співрозмовником."""
+    reader = payload.reader_handle.strip().lower().lstrip("@")
+    other = payload.other_handle.strip().lower().lstrip("@")
+    key = chat_key(reader, other)
+    messages.update_many(
+        {"chat_key": key, "to_handle": reader, "status": {"$ne": "read"}},
+        {"$set": {"status": "read"}},
+    )
+    return {"status": "ok"}
