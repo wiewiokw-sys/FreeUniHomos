@@ -382,4 +382,822 @@
             <div class="a-icon">💬</div>
             <div class="a-label a-collapsed-hint">Створити чат</div>
             <div class="action-form">
-              <div class="field"><label>Назва чату</label><input type="text" id="chatName" maxlength="
+              <div class="field"><label>Назва чату</label><input type="text" id="chatName" maxlength="40" placeholder="напр. Друзі"></div>
+              <div class="field"><label>Хендл</label>
+                <div class="input-wrap"><span class="at-sign">@chat</span><input type="text" class="mono" id="chatHandle" style="padding-left:60px" maxlength="20" placeholder="friends"></div>
+              </div>
+              <div class="action-btns-row">
+                <button class="btn-cancel" onclick="collapseCard('cardChat', event)">Скасувати</button>
+                <button class="btn-create" id="createChatBtn" disabled onclick="createEntity('chat', event)">Створити</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="action-card full" id="cardVoice" data-kind="voice">
+            <div class="a-icon">🎙️</div>
+            <div class="a-label a-collapsed-hint">Створити войс</div>
+            <div class="action-form">
+              <div class="field"><label>Назва войсу</label><input type="text" id="voiceName" maxlength="40" placeholder="напр. Вечірні розмови"></div>
+              <div class="field"><label>Хендл</label>
+                <div class="input-wrap"><span class="at-sign">@voice</span><input type="text" class="mono" id="voiceHandle" style="padding-left:60px" maxlength="20" placeholder="chill"></div>
+              </div>
+              <div class="action-btns-row">
+                <button class="btn-cancel" onclick="collapseCard('cardVoice', event)">Скасувати</button>
+                <button class="btn-create" id="createVoiceBtn" disabled onclick="createEntity('voice', event)">Створити</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: VOICE -->
+      <div class="tab-page" id="pageVoice">
+        <div class="empty-state" id="voiceEmptyState">
+          <div class="empty-emoji">🎙️</div>
+          <div>Ви не під'єднані до войсу</div>
+          <div style="font-size:12.5px;">Знайдіть войс через пошук на головному екрані (@voice...)</div>
+        </div>
+        <div class="voice-active-screen" id="voiceActiveScreen" style="display:none;">
+          <div class="voice-avatar-ring">🎙️</div>
+          <div class="voice-room-name" id="voiceRoomName"></div>
+          <div class="voice-status" id="voiceStatus">Ви слухаєте</div>
+          <div class="voice-controls">
+            <button class="voice-btn talk" id="talkBtn" title="Говорити">🎤</button>
+            <button class="voice-btn mute" id="muteBtn" title="Мьют">🔇</button>
+            <button class="voice-btn leave" id="leaveVoiceBtn" title="Вийти">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: PROFILE -->
+      <div class="tab-page" id="pageProfile">
+        <div class="profile-body">
+          <div class="profile-avatar-row">
+            <div class="profile-avatar" id="profileAvatarLetter">?</div>
+            <div class="profile-name-row">
+              <span id="profileEmoji"></span>
+              <span id="profileNameDisplay">—</span>
+              <button class="emoji-picker-btn" id="emojiPickerBtn">🙂</button>
+            </div>
+            <div class="emoji-popup" id="emojiPopup">
+              <span>😀</span><span>😎</span><span>🔥</span><span>🌟</span><span>💙</span>
+              <span>🐱</span><span>🎧</span><span>🚀</span><span>🌙</span><span>🍀</span>
+              <span>👑</span><span>🎮</span><span>❌ (прибрати)</span>
+            </div>
+          </div>
+
+          <div class="profile-field">
+            <label>Ім'я</label>
+            <input type="text" id="profileNameInput" maxlength="30">
+          </div>
+          <div class="profile-field">
+            <label>Хендл (він же ваш ID — інші знаходять вас саме по ньому)</label>
+            <div class="id-display-row">
+              <div class="input-wrap" style="flex:1;">
+                <span class="at-sign">@</span>
+                <input type="text" class="mono" id="profileHandleInput" style="padding-left:26px" maxlength="20">
+              </div>
+              <button class="copy-btn" id="profileCopyIdBtn">Копіювати</button>
+            </div>
+          </div>
+
+          <button class="primary" id="saveProfileBtn">Зберегти зміни</button>
+          <div class="save-hint" id="saveProfileHint"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="bottom-nav">
+      <button class="nav-btn active" data-page="pageChats"><span class="nav-icon">💬</span>Чати</button>
+      <button class="nav-btn" data-page="pageHome"><span class="nav-icon">🏠</span>Головна</button>
+      <button class="nav-btn" data-page="pageVoice"><span class="nav-icon">🎙️</span>Войс</button>
+      <button class="nav-btn" data-page="pageProfile"><span class="nav-icon">👤</span>Профіль</button>
+    </div>
+  </div>
+
+  <!-- ======================= CHAT DETAIL SCREEN ======================= -->
+  <div class="screen" id="screenChat">
+    <div class="chat-header">
+      <button class="back-btn" id="chatBackBtn">←</button>
+      <div class="chat-header-name" id="chatHeaderName">Збережене</div>
+    </div>
+    <div class="messages-area" id="messagesArea"></div>
+
+    <div class="recording-bar" id="recordingBar">
+      <div class="rec-dot"></div>
+      <div class="rec-timer" id="recTimer">0:00</div>
+      <button class="rec-cancel" id="recCancelBtn">✕</button>
+      <button class="rec-send" id="recSendBtn">➤</button>
+    </div>
+
+    <div class="composer" id="composerBar">
+      <label class="composer-btn" for="photoFileInput">📷</label>
+      <input type="file" id="photoFileInput" accept="image/*" style="display:none;">
+      <textarea id="messageInput" placeholder="Повідомлення..." rows="1"></textarea>
+      <button class="composer-btn" id="micBtn">🎤</button>
+      <button class="composer-btn send" id="sendBtn">➤</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const API_BASE = 'https://freeunihomos.onrender.com';
+
+  // ---------------------------------------------------------------
+  // STATE (persisted in localStorage per-browser)
+  // ---------------------------------------------------------------
+  let currentUser = JSON.parse(localStorage.getItem('funh_user') || 'null');
+  let chats = JSON.parse(localStorage.getItem('funh_chats') || '[]');       // {id, kind, name, handle}
+  let savedMessages = JSON.parse(localStorage.getItem('funh_saved_msgs') || '[]');
+  let profileExtra = JSON.parse(localStorage.getItem('funh_profile_extra') || '{}'); // {emoji}
+  let currentVoiceRoom = JSON.parse(localStorage.getItem('funh_voice_room') || 'null');
+
+  function persist() {
+    localStorage.setItem('funh_chats', JSON.stringify(chats));
+    localStorage.setItem('funh_saved_msgs', JSON.stringify(savedMessages));
+    localStorage.setItem('funh_profile_extra', JSON.stringify(profileExtra));
+    localStorage.setItem('funh_voice_room', JSON.stringify(currentVoiceRoom));
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  // ---------------------------------------------------------------
+  // AUTH TABS
+  // ---------------------------------------------------------------
+  const tabLogin = document.getElementById('tabLogin');
+  const tabRegister = document.getElementById('tabRegister');
+  document.getElementById('panelLogin');
+  tabLogin.addEventListener('click', () => {
+    tabLogin.classList.add('active'); tabRegister.classList.remove('active');
+    document.getElementById('panelLogin').classList.add('active');
+    document.getElementById('panelRegister').classList.remove('active');
+  });
+  tabRegister.addEventListener('click', () => {
+    tabRegister.classList.add('active'); tabLogin.classList.remove('active');
+    document.getElementById('panelRegister').classList.add('active');
+    document.getElementById('panelLogin').classList.remove('active');
+  });
+
+  // ---------------------------------------------------------------
+  // REGISTER FORM validation
+  // ---------------------------------------------------------------
+  const regName = document.getElementById('regName');
+  const regHandle = document.getElementById('regHandle');
+  const regPassword = document.getElementById('regPassword');
+  const registerBtn = document.getElementById('registerBtn');
+  const handleHint = document.getElementById('handleHint');
+
+  function sanitizeHandle() {
+    const raw = regHandle.value;
+    const clean = raw.replace(/[^A-Za-z0-9_-]/g, '');
+    regHandle.value = clean;
+    handleHint.classList.toggle('error', clean !== raw);
+  }
+  function updateRegisterButton() {
+    const nameOk = regName.value.trim().length >= 2;
+    const handleOk = regHandle.value.length >= 3;
+    const passOk = regPassword.value.length >= 4;
+    registerBtn.disabled = !(nameOk && handleOk && passOk);
+  }
+  regName.addEventListener('input', updateRegisterButton);
+  regHandle.addEventListener('input', () => { sanitizeHandle(); updateRegisterButton(); });
+  regPassword.addEventListener('input', updateRegisterButton);
+
+  // ---------------------------------------------------------------
+  // LOADING / RESULT SCREEN helper
+  // ---------------------------------------------------------------
+  function goToLoading(loadingLabel) {
+    document.getElementById('loadingView').style.display = 'block';
+    document.getElementById('resultView').style.display = 'none';
+    document.getElementById('loadingText').textContent = loadingLabel;
+    showScreen('screenLoading');
+  }
+
+  function showResult(success, title, reason, onRetry) {
+    document.getElementById('loadingView').style.display = 'none';
+    document.getElementById('resultView').style.display = 'block';
+    const icon = document.getElementById('resultIcon');
+    icon.className = 'result-icon ' + (success ? 'ok' : 'fail');
+    icon.textContent = success ? '✓' : '✕';
+    document.getElementById('resultTitle').textContent = title;
+    document.getElementById('resultReason').textContent = reason || '';
+    const retryBtn = document.getElementById('resultRetryBtn');
+    if (!success && onRetry) {
+      retryBtn.style.display = 'block';
+      retryBtn.onclick = onRetry;
+    } else {
+      retryBtn.style.display = 'none';
+    }
+    if (success) {
+      setTimeout(() => { enterApp(); }, 900);
+    }
+  }
+
+  function friendlyError(err) {
+    if (err && err.message === 'Failed to fetch') {
+      return 'Немає з\'єднання з сервером. Можливо, він "спав" — зачекайте 40-50 секунд і спробуйте ще раз.';
+    }
+    return (err && err.message) || 'Невідома помилка. Спробуйте ще раз.';
+  }
+
+  // ---------------------------------------------------------------
+  // REGISTER submit
+  // ---------------------------------------------------------------
+  registerBtn.addEventListener('click', () => doRegister());
+  function doRegister() {
+    goToLoading('Реєструємо акаунт...');
+    fetch(API_BASE + '/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: regName.value.trim(),
+        handle: regHandle.value.trim(),
+        password: regPassword.value
+      })
+    })
+    .then(async res => {
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Помилка реєстрації');
+      currentUser = data;
+      localStorage.setItem('funh_user', JSON.stringify(currentUser));
+      showResult(true, 'Готово!', 'Акаунт створено.');
+    })
+    .catch(err => {
+      showResult(false, 'Не вийшло', friendlyError(err), doRegister);
+    });
+  }
+
+  // ---------------------------------------------------------------
+  // LOGIN submit
+  // ---------------------------------------------------------------
+  document.getElementById('loginBtn').addEventListener('click', () => doLogin());
+  function doLogin() {
+    const identifier = document.getElementById('loginIdentifier').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    if (!identifier || !password) {
+      document.getElementById('loginMsg').textContent = 'Заповніть обидва поля';
+      document.getElementById('loginMsg').className = 'form-msg error';
+      return;
+    }
+    goToLoading('Входимо в акаунт...');
+    fetch(API_BASE + '/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier, password })
+    })
+    .then(async res => {
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Невірний хендл/ID або пароль');
+      currentUser = data;
+      localStorage.setItem('funh_user', JSON.stringify(currentUser));
+      showResult(true, 'Готово!', 'Вхід виконано.');
+    })
+    .catch(err => {
+      showResult(false, 'Не вийшло', friendlyError(err), doLogin);
+    });
+  }
+
+  // ---------------------------------------------------------------
+  // ENTER APP (after successful auth)
+  // ---------------------------------------------------------------
+  function enterApp() {
+    showScreen('screenApp');
+    renderChatList();
+    renderProfile();
+    renderVoiceTab();
+  }
+
+  // ---------------------------------------------------------------
+  // BOTTOM NAV
+  // ---------------------------------------------------------------
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.page).classList.add('active');
+    });
+  });
+
+  // ---------------------------------------------------------------
+  // CHATS TAB
+  // ---------------------------------------------------------------
+  function renderChatList() {
+    const container = document.getElementById('chatListContainer');
+    let html = `
+      <div class="chat-row" onclick="openChat('saved')">
+        <div class="chat-avatar saved">📌</div>
+        <div class="chat-info">
+          <div class="chat-name">Збережене</div>
+          <div class="chat-sub">${lastMessagePreview(savedMessages)}</div>
+        </div>
+        <div class="chat-meta"><div class="chat-time">${lastMessageTime(savedMessages)}</div></div>
+      </div>`;
+    chats.forEach(c => {
+      if (c.kind === 'dm') {
+        html += `
+        <div class="chat-row" onclick="openEntity('${c.id}')">
+          <div class="chat-avatar">${(c.name || '?').charAt(0).toUpperCase()}</div>
+          <div class="chat-info">
+            <div class="chat-name">${escapeHtml(c.name)}</div>
+            <div class="chat-sub">@${escapeHtml(c.handle)}</div>
+          </div>
+        </div>`;
+        return;
+      }
+      const icon = c.kind === 'channel' ? '📢' : (c.kind === 'voice' ? '🎙️' : '💬');
+      const cls = c.kind === 'voice' ? 'voice' : '';
+      html += `
+      <div class="chat-row" onclick="openEntity('${c.id}')">
+        <div class="chat-avatar ${cls}">${icon}</div>
+        <div class="chat-info">
+          <div class="chat-name">${escapeHtml(c.name)}</div>
+          <div class="chat-sub">@${c.kind}${escapeHtml(c.handle)}</div>
+        </div>
+      </div>`;
+    });
+    container.innerHTML = html;
+  }
+
+  function lastMessagePreview(msgs) {
+    if (!msgs.length) return 'Немає повідомлень';
+    const m = msgs[msgs.length - 1];
+    if (m.type === 'text') return escapeHtml(m.text.slice(0, 40));
+    if (m.type === 'photo') return '📷 Фото';
+    if (m.type === 'voice') return '🎤 Голосове повідомлення';
+    return '';
+  }
+  function lastMessageTime(msgs) {
+    if (!msgs.length) return '';
+    return msgs[msgs.length - 1].time;
+  }
+  function escapeHtml(s) {
+    const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+  }
+
+  function openEntity(id) {
+    const entity = chats.find(c => c.id === id);
+    if (!entity) return;
+    if (entity.kind === 'voice') {
+      joinVoiceRoom(entity);
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
+      document.querySelector('.nav-btn[data-page="pageVoice"]').classList.add('active');
+      document.getElementById('pageVoice').classList.add('active');
+      return;
+    }
+    if (entity.kind === 'dm') {
+      openDmChat(entity.handle, entity.name);
+      return;
+    }
+    // channel / chat -> simple message screen (local-only prototype for now)
+    activeChatId = id;
+    document.getElementById('chatHeaderName').textContent = entity.name;
+    renderMessages(entity.messages || []);
+    showScreen('screenChat');
+  }
+
+  let activeChatId = 'saved'; // 'saved' | custom local chat id | 'dm:<handle>'
+  let dmPollInterval = null;
+
+  function openChat(id) {
+    stopDmPolling();
+    activeChatId = id;
+    document.getElementById('chatHeaderName').textContent = 'Збережене';
+    renderMessages(savedMessages);
+    showScreen('screenChat');
+  }
+
+  // ---- Real 1-on-1 chat with another registered user (backed by the server) ----
+  function openDmChat(otherHandle, otherName) {
+    activeChatId = 'dm:' + otherHandle;
+    document.getElementById('chatHeaderName').textContent = otherName;
+    document.getElementById('messagesArea').innerHTML = `<div style="text-align:center;color:var(--text-muted);font-size:13px;padding:20px;">Завантажуємо повідомлення...</div>`;
+    showScreen('screenChat');
+    fetchDmMessages(otherHandle, true);
+    dmPollInterval = setInterval(() => fetchDmMessages(otherHandle, false), 3000);
+  }
+
+  function stopDmPolling() {
+    if (dmPollInterval) { clearInterval(dmPollInterval); dmPollInterval = null; }
+  }
+
+  function fetchDmMessages(otherHandle, scrollToBottom) {
+    fetch(API_BASE + '/messages/' + encodeURIComponent(currentUser.handle) + '/' + encodeURIComponent(otherHandle))
+      .then(res => res.json())
+      .then(list => {
+        // map server fields to the same shape renderBubble expects
+        const mapped = list.map(m => ({
+          type: m.type,
+          text: m.type === 'text' ? m.content : undefined,
+          dataUrl: m.type !== 'text' ? m.content : undefined,
+          duration: m.duration,
+          time: m.time,
+          status: m.status,
+          mine: m.from_handle === currentUser.handle,
+        }));
+        renderMessages(mapped, scrollToBottom);
+        // mark incoming messages as read since we're looking at the chat right now
+        fetch(API_BASE + '/messages/mark_read', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reader_handle: currentUser.handle, other_handle: otherHandle })
+        }).catch(() => {});
+      })
+      .catch(() => {
+        // Silent fail on a poll — connection hiccup, will retry on next interval
+      });
+  }
+
+  document.getElementById('chatBackBtn').addEventListener('click', () => {
+    stopDmPolling();
+    showScreen('screenApp');
+    renderChatList();
+  });
+
+  // ---------------------------------------------------------------
+  // MESSAGES (text / photo / voice) with animation + ticks + time
+  // ---------------------------------------------------------------
+  function nowTime() {
+    const d = new Date();
+    return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+  }
+
+  function getActiveMessagesArray() {
+    if (activeChatId === 'saved') return savedMessages;
+    if (activeChatId.startsWith('dm:')) return null; // DM chats are server-backed, not local
+    const entity = chats.find(c => c.id === activeChatId);
+    if (!entity.messages) entity.messages = [];
+    return entity.messages;
+  }
+
+  function renderMessages(msgs, scrollToBottom) {
+    const area = document.getElementById('messagesArea');
+    area.innerHTML = msgs.map(renderBubble).join('');
+    if (scrollToBottom !== false) area.scrollTop = area.scrollHeight;
+  }
+
+  function renderBubble(m) {
+    let inner = '';
+    if (m.type === 'text') {
+      inner = `<div>${escapeHtml(m.text)}</div>`;
+    } else if (m.type === 'photo') {
+      inner = `<img src="${m.dataUrl}">`;
+    } else if (m.type === 'voice') {
+      inner = `
+        <button class="voice-play-btn" onclick="playVoice(this)" data-src="${m.dataUrl}">▶</button>
+        <div class="waveform">${voiceBars()}</div>
+        <span style="font-size:11px;">${m.duration}</span>`;
+    }
+    const ticks = m.status === 'sending' ? '<span class="ticks pending">🕐</span>'
+                : m.status === 'read' ? '<span class="ticks">✓✓</span>'
+                : '<span class="ticks">✓</span>';
+    // in a DM, messages from the other person are shown left-aligned, not as "sent by me"
+    const isIncoming = (activeChatId.startsWith('dm:') && m.mine === false);
+    return `<div class="msg-bubble ${m.type === 'photo' ? 'photo' : ''} ${m.type === 'voice' ? 'voice' : ''}" ${isIncoming ? 'style="align-self:flex-start;background:var(--panel-2);color:var(--text);"' : ''}>
+      ${inner}
+      <div class="msg-meta" ${isIncoming ? 'style="justify-content:flex-start;color:var(--text-muted);"' : ''}><span class="msg-time">${m.time}</span>${isIncoming ? '' : ticks}</div>
+    </div>`;
+  }
+
+  function voiceBars() {
+    let s = '';
+    for (let i = 0; i < 18; i++) {
+      const h = 6 + Math.round(Math.random() * 14);
+      s += `<span style="height:${h}px;"></span>`;
+    }
+    return s;
+  }
+
+  function playVoice(btn) {
+    const audio = new Audio(btn.dataset.src);
+    btn.textContent = '⏸';
+    audio.play();
+    audio.onended = () => { btn.textContent = '▶'; };
+  }
+
+  function pushMessage(msg) {
+    if (activeChatId.startsWith('dm:')) {
+      const otherHandle = activeChatId.slice(3);
+      const content = msg.type === 'text' ? msg.text : msg.dataUrl;
+      fetch(API_BASE + '/messages/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from_handle: currentUser.handle,
+          to_handle: otherHandle,
+          type: msg.type,
+          content: content,
+          time: msg.time,
+          duration: msg.duration || ''
+        })
+      })
+      .then(res => res.json())
+      .then(() => fetchDmMessages(otherHandle, true))
+      .catch(() => {
+        alert('Не вдалося надіслати повідомлення. Перевірте з\'єднання.');
+      });
+      return;
+    }
+    const arr = getActiveMessagesArray();
+    arr.push(msg);
+    persist();
+    renderMessages(arr);
+    setTimeout(() => {
+      msg.status = 'sent';
+      renderMessages(arr);
+      if (activeChatId === 'saved') {
+        setTimeout(() => { msg.status = 'read'; persist(); renderMessages(arr); }, 500);
+      }
+    }, 350);
+  }
+
+  // ---- Text sending ----
+  const messageInput = document.getElementById('messageInput');
+  const sendBtn = document.getElementById('sendBtn');
+  messageInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendText(); }
+  });
+  sendBtn.addEventListener('click', sendText);
+  function sendText() {
+    const text = messageInput.value.trim();
+    if (!text) return;
+    pushMessage({ type: 'text', text, time: nowTime(), status: 'sending' });
+    messageInput.value = '';
+  }
+
+  // ---- Photo sending ----
+  document.getElementById('photoFileInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      pushMessage({ type: 'photo', dataUrl: reader.result, time: nowTime(), status: 'sending' });
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  });
+
+  // ---- Voice recording (up to 4 minutes) ----
+  const MAX_SECONDS = 240;
+  let mediaRecorder = null, recordedChunks = [], recSeconds = 0, recTimerInterval = null, recStream = null;
+  const micBtn = document.getElementById('micBtn');
+  const recordingBar = document.getElementById('recordingBar');
+  const composerBar = document.getElementById('composerBar');
+  const recTimerEl = document.getElementById('recTimer');
+
+  micBtn.addEventListener('click', startRecording);
+  async function startRecording() {
+    try {
+      recStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err) {
+      alert('Потрібен дозвіл на мікрофон, щоб записати голосове повідомлення.');
+      return;
+    }
+    recordedChunks = [];
+    mediaRecorder = new MediaRecorder(recStream);
+    mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+    mediaRecorder.start();
+
+    recSeconds = 0;
+    recTimerEl.textContent = '0:00';
+    recordingBar.classList.add('active');
+    composerBar.style.display = 'none';
+
+    recTimerInterval = setInterval(() => {
+      recSeconds++;
+      const mm = Math.floor(recSeconds / 60), ss = recSeconds % 60;
+      recTimerEl.textContent = mm + ':' + String(ss).padStart(2, '0');
+      if (recSeconds >= MAX_SECONDS) finishRecording(true);
+    }, 1000);
+  }
+
+  document.getElementById('recCancelBtn').addEventListener('click', () => finishRecording(false));
+  document.getElementById('recSendBtn').addEventListener('click', () => finishRecording(true));
+
+  function finishRecording(send) {
+    clearInterval(recTimerInterval);
+    recordingBar.classList.remove('active');
+    composerBar.style.display = 'flex';
+    if (!mediaRecorder) return;
+
+    const durationLabel = Math.floor(recSeconds / 60) + ':' + String(recSeconds % 60).padStart(2, '0');
+
+    mediaRecorder.onstop = () => {
+      if (recStream) recStream.getTracks().forEach(t => t.stop());
+      if (!send || recordedChunks.length === 0) return;
+      const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+      const reader = new FileReader();
+      reader.onload = () => {
+        pushMessage({ type: 'voice', dataUrl: reader.result, duration: durationLabel, time: nowTime(), status: 'sending' });
+      };
+      reader.readAsDataURL(blob);
+    };
+    mediaRecorder.stop();
+  }
+
+  // ---------------------------------------------------------------
+  // HOME TAB — search real people + create channel/chat/voice
+  // ---------------------------------------------------------------
+  function collapseCard(id, event) {
+    if (event) event.stopPropagation();
+    document.getElementById(id).classList.remove('expanded');
+  }
+  document.querySelectorAll('.action-card').forEach(card => {
+    card.addEventListener('click', () => {
+      if (!card.classList.contains('expanded')) {
+        document.querySelectorAll('.action-card').forEach(c => c.classList.remove('expanded'));
+        card.classList.add('expanded');
+      }
+    });
+  });
+
+  function wireCreateValidation(nameId, handleId, btnId) {
+    const nameEl = document.getElementById(nameId);
+    const handleEl = document.getElementById(handleId);
+    const btn = document.getElementById(btnId);
+    function sanitize() {
+      handleEl.value = handleEl.value.replace(/[^A-Za-z0-9_-]/g, '');
+      btn.disabled = !(nameEl.value.trim().length >= 2 && handleEl.value.length >= 3);
+    }
+    nameEl.addEventListener('input', sanitize);
+    handleEl.addEventListener('input', sanitize);
+  }
+  wireCreateValidation('channelName', 'channelHandle', 'createChannelBtn');
+  wireCreateValidation('chatName', 'chatHandle', 'createChatBtn');
+  wireCreateValidation('voiceName', 'voiceHandle', 'createVoiceBtn');
+
+  function createEntity(kind, event) {
+    if (event) event.stopPropagation();
+    const nameEl = document.getElementById(kind + 'Name');
+    const handleEl = document.getElementById(kind + 'Handle');
+    const name = nameEl.value.trim();
+    const handle = handleEl.value.trim();
+    if (name.length < 2 || handle.length < 3) return;
+
+    const entity = { id: kind + '_' + Date.now(), kind, name, handle, messages: [] };
+    chats.push(entity);
+    persist();
+    nameEl.value = ''; handleEl.value = '';
+    document.getElementById('card' + kind.charAt(0).toUpperCase() + kind.slice(1)).classList.remove('expanded');
+    renderChatList();
+
+    if (kind === 'voice') {
+      joinVoiceRoom(entity);
+    }
+  }
+
+  let searchDebounce = null;
+  document.getElementById('homeSearchInput').addEventListener('input', (e) => {
+    const q = e.target.value.trim();
+    const results = document.getElementById('homeSearchResults');
+    if (!q) { results.innerHTML = ''; return; }
+
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => {
+      // 1. Local channels/chats/voices (still local-only for now)
+      const localFound = chats.filter(c => c.kind !== 'dm' && (c.handle.toLowerCase().includes(q.toLowerCase()) || c.name.toLowerCase().includes(q.toLowerCase())));
+
+      // 2. Real people registered on the server
+      fetch(API_BASE + '/search/users?q=' + encodeURIComponent(q.replace('@', '')))
+        .then(res => res.ok ? res.json() : [])
+        .then(people => {
+          people = people.filter(p => p.handle !== currentUser.handle);
+          let html = '';
+          localFound.forEach(c => {
+            html += `
+            <div class="search-result-row" onclick="openEntity('${c.id}')" style="cursor:pointer;">
+              <div class="chat-avatar ${c.kind === 'voice' ? 'voice' : ''}" style="width:36px;height:36px;font-size:14px;">${c.kind === 'channel' ? '📢' : c.kind === 'voice' ? '🎙️' : '💬'}</div>
+              <div><div style="font-size:14px;font-weight:600;">${escapeHtml(c.name)}</div><div style="font-size:12px;color:var(--text-muted);">@${c.kind}${escapeHtml(c.handle)}</div></div>
+            </div>`;
+          });
+          people.forEach(p => {
+            html += `
+            <div class="search-result-row" onclick="startDmWith('${escapeHtml(p.handle)}', '${escapeHtml(p.name)}')" style="cursor:pointer;">
+              <div class="chat-avatar" style="width:36px;height:36px;font-size:14px;">${(p.name || '?').charAt(0).toUpperCase()}</div>
+              <div><div style="font-size:14px;font-weight:600;">${escapeHtml(p.name)}</div><div style="font-size:12px;color:var(--text-muted);">@${escapeHtml(p.handle)} · людина</div></div>
+            </div>`;
+          });
+          results.innerHTML = html || `<div style="color:var(--text-muted); font-size:13px; padding:10px 0;">Нічого не знайдено</div>`;
+        })
+        .catch(() => {
+          results.innerHTML = `<div style="color:var(--err); font-size:13px; padding:10px 0;">Немає з'єднання з сервером</div>`;
+        });
+    }, 300);
+  });
+
+  function startDmWith(handle, name) {
+    let entity = chats.find(c => c.kind === 'dm' && c.handle === handle);
+    if (!entity) {
+      entity = { id: 'dm_' + handle, kind: 'dm', handle, name };
+      chats.push(entity);
+      persist();
+      renderChatList();
+    }
+    document.getElementById('homeSearchInput').value = '';
+    document.getElementById('homeSearchResults').innerHTML = '';
+    openDmChat(handle, name);
+  }
+
+  // ---------------------------------------------------------------
+  // VOICE TAB
+  // ---------------------------------------------------------------
+  let isTalking = false, isMuted = false;
+
+  function joinVoiceRoom(entity) {
+    currentVoiceRoom = { id: entity.id, name: entity.name };
+    persist();
+    renderVoiceTab();
+  }
+
+  function renderVoiceTab() {
+    const empty = document.getElementById('voiceEmptyState');
+    const active = document.getElementById('voiceActiveScreen');
+    if (currentVoiceRoom) {
+      empty.style.display = 'none';
+      active.style.display = 'flex';
+      document.getElementById('voiceRoomName').textContent = currentVoiceRoom.name;
+      document.getElementById('voiceStatus').textContent = isTalking ? 'Ви говорите' : 'Ви слухаєте';
+    } else {
+      empty.style.display = 'flex';
+      active.style.display = 'none';
+    }
+  }
+
+  document.getElementById('talkBtn').addEventListener('click', function() {
+    isTalking = !isTalking;
+    this.classList.toggle('active', isTalking);
+    document.getElementById('voiceStatus').textContent = isTalking ? 'Ви говорите' : 'Ви слухаєте';
+  });
+  document.getElementById('muteBtn').addEventListener('click', function() {
+    isMuted = !isMuted;
+    this.classList.toggle('active', isMuted);
+  });
+  document.getElementById('leaveVoiceBtn').addEventListener('click', () => {
+    currentVoiceRoom = null;
+    isTalking = false; isMuted = false;
+    persist();
+    renderVoiceTab();
+  });
+
+  // ---------------------------------------------------------------
+  // PROFILE TAB
+  // ---------------------------------------------------------------
+  function renderProfile() {
+    if (!currentUser) return;
+    document.getElementById('profileAvatarLetter').textContent = (currentUser.name || '?').charAt(0).toUpperCase();
+    document.getElementById('profileNameDisplay').textContent = currentUser.name;
+    document.getElementById('profileEmoji').textContent = profileExtra.emoji || '';
+    document.getElementById('profileNameInput').value = currentUser.name;
+    document.getElementById('profileHandleInput').value = currentUser.handle;
+  }
+
+  const emojiPickerBtn = document.getElementById('emojiPickerBtn');
+  const emojiPopup = document.getElementById('emojiPopup');
+  emojiPickerBtn.addEventListener('click', () => emojiPopup.classList.toggle('show'));
+  emojiPopup.querySelectorAll('span').forEach(span => {
+    span.addEventListener('click', () => {
+      const val = span.textContent.startsWith('❌') ? '' : span.textContent;
+      profileExtra.emoji = val;
+      persist();
+      document.getElementById('profileEmoji').textContent = val;
+      emojiPopup.classList.remove('show');
+    });
+  });
+
+  document.getElementById('profileCopyIdBtn').addEventListener('click', () => {
+    navigator.clipboard.writeText('@' + currentUser.handle).then(() => {
+      const btn = document.getElementById('profileCopyIdBtn');
+      const old = btn.textContent;
+      btn.textContent = 'Скопійовано ✓';
+      setTimeout(() => { btn.textContent = old; }, 1500);
+    });
+  });
+
+  document.getElementById('saveProfileBtn').addEventListener('click', () => {
+    currentUser.name = document.getElementById('profileNameInput').value.trim() || currentUser.name;
+    const newHandle = document.getElementById('profileHandleInput').value.trim().replace(/[^A-Za-z0-9_-]/g, '');
+    currentUser.handle = newHandle || currentUser.handle;
+    localStorage.setItem('funh_user', JSON.stringify(currentUser));
+    renderProfile();
+    renderChatList();
+    const hint = document.getElementById('saveProfileHint');
+    hint.textContent = 'Збережено ✓';
+    setTimeout(() => { hint.textContent = ''; }, 1800);
+  });
+
+  // ---------------------------------------------------------------
+  // BOOT: if already logged in, skip auth screen
+  // ---------------------------------------------------------------
+  if (currentUser) {
+    enterApp();
+  }
+</script>
+
+</body>
+</html>
