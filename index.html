@@ -2,15 +2,16 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UniHomos</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>FreeUniHomos</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
   :root {
     --bg: #10131a;
     --bg-2: #171c26;
     --panel: #1b202b;
+    --panel-2: #212736;
     --panel-border: #2a3140;
     --accent: #f2a65a;
     --accent-dim: #d88f45;
@@ -20,469 +21,365 @@
     --err: #e5665c;
     --ok: #6fbf73;
   }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+  }
+  #root { position: relative; width: 100%; height: 100%; }
+  .screen {
+    position: absolute; inset: 0;
+    display: none;
+    flex-direction: column;
+  }
+  .screen.active { display: flex; }
 
-  * { box-sizing: border-box; }
-
-  body {
-    margin: 0;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  /* ============ AUTH SCREEN ============ */
+  #screenAuth {
+    align-items: center; justify-content: center;
+    padding: 24px;
     background:
       radial-gradient(circle at 20% 15%, rgba(242,166,90,0.08), transparent 45%),
       radial-gradient(circle at 85% 85%, rgba(91,141,239,0.08), transparent 45%),
       var(--bg);
-    font-family: 'Inter', sans-serif;
-    color: var(--text);
-    padding: 24px;
   }
-
   .card {
-    width: 100%;
-    max-width: 400px;
+    width: 100%; max-width: 400px;
     background: var(--panel);
     border: 1px solid var(--panel-border);
     border-radius: 28px;
     padding: 30px 30px 28px;
     box-shadow: 0 30px 60px -20px rgba(0,0,0,0.6);
   }
+  .logo-row { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
+  .logo-dot { width: 30px; height: 30px; border-radius: 10px; background: linear-gradient(135deg, var(--accent), var(--accent-dim)); flex-shrink: 0; }
+  .logo-text { font-family: 'Fraunces', serif; font-weight: 700; font-size: 19px; }
 
-  .logo-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 22px;
-  }
-  .logo-dot {
-    width: 30px;
-    height: 30px;
-    border-radius: 10px;
-    background: linear-gradient(135deg, var(--accent), var(--accent-dim));
-    flex-shrink: 0;
-  }
-  .logo-text {
-    font-family: 'Fraunces', serif;
-    font-weight: 600;
-    font-size: 18px;
-  }
+  .tabs { display: flex; background: var(--bg-2); border: 1px solid var(--panel-border); border-radius: 16px; padding: 4px; margin-bottom: 22px; }
+  .tab-btn { flex: 1; border: none; background: transparent; color: var(--text-muted); font-size: 14px; font-weight: 500; padding: 10px; border-radius: 12px; cursor: pointer; font-family: 'Inter', sans-serif; }
+  .tab-btn.active { background: var(--accent); color: #1a1200; }
 
-  .tabs {
-    display: flex;
-    background: var(--bg-2);
-    border: 1px solid var(--panel-border);
-    border-radius: 16px;
-    padding: 4px;
-    margin-bottom: 22px;
-  }
-  .tab-btn {
-    flex: 1;
-    border: none;
-    background: transparent;
-    color: var(--text-muted);
-    font-size: 14px;
-    font-weight: 500;
-    padding: 10px;
-    border-radius: 12px;
-    cursor: pointer;
-    font-family: 'Inter', sans-serif;
-    transition: background 0.15s ease, color 0.15s ease;
-  }
-  .tab-btn.active {
-    background: var(--accent);
-    color: #1a1200;
-  }
-
-  h1 {
-    font-family: 'Fraunces', serif;
-    font-weight: 600;
-    font-size: 22px;
-    margin: 0 0 6px;
-  }
-
-  .subtitle {
-    color: var(--text-muted);
-    font-size: 13.5px;
-    margin: 0 0 22px;
-    line-height: 1.4;
-  }
-
+  h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 22px; margin: 0 0 6px; }
+  .subtitle { color: var(--text-muted); font-size: 13.5px; margin: 0 0 22px; line-height: 1.4; }
   .field { margin-bottom: 16px; }
-
-  .field label {
-    display: block;
-    font-size: 12.5px;
-    font-weight: 500;
-    color: var(--text-muted);
-    margin-bottom: 7px;
-    letter-spacing: 0.02em;
-  }
-
+  .field label { display: block; font-size: 12.5px; font-weight: 500; color: var(--text-muted); margin-bottom: 7px; }
   .input-wrap { position: relative; }
-
   input {
-    width: 100%;
-    background: var(--bg-2);
-    border: 1.5px solid var(--panel-border);
-    border-radius: 16px;
-    padding: 13px 16px;
-    font-size: 15px;
-    color: var(--text);
-    outline: none;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-    font-family: 'Inter', sans-serif;
+    width: 100%; background: var(--bg-2); border: 1.5px solid var(--panel-border);
+    border-radius: 16px; padding: 13px 16px; font-size: 15px; color: var(--text);
+    outline: none; font-family: 'Inter', sans-serif;
   }
-
   input.mono { font-family: 'JetBrains Mono', monospace; padding-left: 26px; }
-
-  .at-sign {
-    position: absolute;
-    left: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--tag);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 15px;
-    pointer-events: none;
-  }
-
-  input:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(242,166,90,0.15);
-  }
-
-  input.invalid { border-color: var(--err); }
-
-  .hint {
-    font-size: 12px;
-    margin-top: 6px;
-    min-height: 15px;
-    color: var(--text-muted);
-  }
+  .at-sign { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--tag); font-family: 'JetBrains Mono', monospace; font-size: 15px; pointer-events: none; }
+  input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(242,166,90,0.15); }
+  .hint { font-size: 12px; margin-top: 6px; min-height: 15px; color: var(--text-muted); }
   .hint.error { color: var(--err); }
 
   button.primary {
-    width: 100%;
-    padding: 14px;
-    border-radius: 16px;
-    border: none;
-    background: var(--accent);
-    color: #1a1200;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-top: 6px;
-    transition: background 0.15s ease, opacity 0.15s ease;
-    font-family: 'Inter', sans-serif;
+    width: 100%; padding: 14px; border-radius: 16px; border: none;
+    background: var(--accent); color: #1a1200; font-size: 15px; font-weight: 600;
+    cursor: pointer; margin-top: 6px; font-family: 'Inter', sans-serif;
   }
-  button.primary:disabled {
-    background: var(--panel-border);
-    color: var(--text-muted);
-    cursor: not-allowed;
-  }
-  button.primary:not(:disabled):hover { background: var(--accent-dim); }
-
-  .form-msg {
-    font-size: 13px;
-    margin-top: 12px;
-    min-height: 16px;
-    text-align: center;
-  }
+  button.primary:disabled { background: var(--panel-border); color: var(--text-muted); }
+  .form-msg { font-size: 13px; margin-top: 12px; min-height: 16px; text-align: center; }
   .form-msg.error { color: var(--err); }
-  .form-msg.loading { color: var(--text-muted); }
 
-  .panel { display: none; }
-  .panel.active { display: block; }
+  .auth-panel { display: none; }
+  .auth-panel.active { display: block; }
 
-  /* --- Success screen (shows generated ID) --- */
-  .success-box { text-align: center; padding: 6px 0 4px; }
-  .success-check {
-    width: 54px; height: 54px;
-    border-radius: 50%;
-    background: rgba(111,191,115,0.15);
-    color: var(--ok);
+  /* ============ LOADING / RESULT SCREEN ============ */
+  #screenLoading { align-items: center; justify-content: center; background: var(--bg); text-align: center; padding: 24px; }
+  .spinner {
+    width: 60px; height: 60px; border-radius: 50%;
+    border: 4px solid var(--panel-border); border-top-color: var(--accent);
+    animation: spin 0.8s linear infinite; margin: 0 auto 24px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .result-icon {
+    width: 64px; height: 64px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    margin: 0 auto 18px;
-    font-size: 26px;
+    font-size: 30px; margin: 0 auto 20px;
+    animation: pop 0.35s ease;
   }
-  .id-label {
-    font-size: 12.5px;
-    color: var(--text-muted);
-    margin-bottom: 8px;
+  @keyframes pop { 0% { transform: scale(0.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+  .result-icon.ok { background: rgba(111,191,115,0.15); color: var(--ok); }
+  .result-icon.fail { background: rgba(229,102,92,0.15); color: var(--err); }
+  #loadingText { color: var(--text-muted); font-size: 14px; }
+  #resultReason { color: var(--text-muted); font-size: 13.5px; max-width: 300px; margin: 0 auto 20px; line-height: 1.4; }
+  #resultRetryBtn { max-width: 220px; }
+
+  /* ============ MAIN APP ============ */
+  #screenApp { background: var(--bg); }
+  .app-body { flex: 1; overflow: hidden; position: relative; }
+  .tab-page { position: absolute; inset: 0; display: none; flex-direction: column; overflow-y: auto; }
+  .tab-page.active { display: flex; }
+
+  .topbar {
+    padding: 16px 18px 12px; display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--panel-border); flex-shrink: 0;
   }
-  .id-box {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 22px;
-    letter-spacing: 0.12em;
-    background: var(--bg-2);
-    border: 1.5px dashed var(--panel-border);
-    border-radius: 16px;
-    padding: 16px;
+  .topbar .logo-text { font-size: 17px; }
+
+  /* bottom nav */
+  .bottom-nav {
+    display: flex; border-top: 1px solid var(--panel-border);
+    background: var(--panel); flex-shrink: 0;
+  }
+  .nav-btn {
+    flex: 1; background: none; border: none; color: var(--text-muted);
+    padding: 10px 4px 12px; display: flex; flex-direction: column; align-items: center; gap: 4px;
+    font-family: 'Inter', sans-serif; font-size: 10.5px; cursor: pointer;
+  }
+  .nav-btn .nav-icon { font-size: 20px; }
+  .nav-btn.active { color: var(--accent); }
+
+  /* Chats list */
+  .chat-list { padding: 6px 0; }
+  .chat-row {
+    display: flex; align-items: center; gap: 12px; padding: 12px 18px;
+    cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  .chat-avatar {
+    width: 46px; height: 46px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 600;
+    background: linear-gradient(135deg, var(--tag), #3a63c9);
+    color: #fff;
+  }
+  .chat-avatar.saved { background: linear-gradient(135deg, var(--accent), var(--accent-dim)); color: #1a1200; }
+  .chat-avatar.voice { background: linear-gradient(135deg, #9b6fd4, #6f3fbf); }
+  .chat-info { flex: 1; min-width: 0; }
+  .chat-name { font-size: 15px; font-weight: 600; }
+  .chat-sub { font-size: 13px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chat-meta { text-align: right; flex-shrink: 0; }
+  .chat-time { font-size: 11.5px; color: var(--text-muted); }
+
+  .empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); font-size: 14px; padding: 30px; text-align: center; gap: 8px; }
+  .empty-emoji { font-size: 40px; margin-bottom: 6px; }
+
+  /* Home tab */
+  .home-search { padding: 14px 18px 6px; flex-shrink: 0; }
+  .search-input-wrap { position: relative; }
+  .search-input-wrap input { padding-left: 40px; }
+  .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 15px; }
+  .search-results { padding: 4px 18px 0; }
+  .search-result-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .home-actions { padding: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .action-card {
+    background: var(--panel); border: 1px solid var(--panel-border); border-radius: 18px;
+    padding: 16px; cursor: pointer; transition: all 0.15s ease; overflow: hidden;
+  }
+  .action-card .a-icon { font-size: 22px; margin-bottom: 8px; }
+  .action-card .a-label { font-size: 13.5px; font-weight: 600; }
+  .action-card.full { grid-column: 1 / -1; }
+  .action-form { display: none; margin-top: 14px; }
+  .action-card.expanded .action-form { display: block; }
+  .action-card.expanded .a-collapsed-hint { display: none; }
+  .action-form .field { margin-bottom: 10px; }
+  .action-form label { display: block; font-size: 11.5px; color: var(--text-muted); margin-bottom: 5px; }
+  .action-btns-row { display: flex; gap: 8px; margin-top: 12px; }
+  .action-btns-row button { flex: 1; padding: 10px; border-radius: 12px; border: none; font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; }
+  .btn-cancel { background: var(--bg-2); color: var(--text-muted); }
+  .btn-create { background: var(--accent); color: #1a1200; }
+  .btn-create:disabled { background: var(--panel-border); color: var(--text-muted); }
+
+  /* Voice tab */
+  .voice-active-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; gap: 20px; }
+  .voice-room-name { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; }
+  .voice-avatar-ring {
+    width: 100px; height: 100px; border-radius: 50%;
+    background: linear-gradient(135deg, #9b6fd4, #6f3fbf);
+    display: flex; align-items: center; justify-content: center; font-size: 38px;
+    box-shadow: 0 0 0 6px rgba(155,111,212,0.15);
+  }
+  .voice-status { color: var(--text-muted); font-size: 13px; }
+  .voice-controls { display: flex; gap: 16px; margin-top: 10px; }
+  .voice-btn {
+    width: 58px; height: 58px; border-radius: 50%; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; font-size: 22px;
+    background: var(--panel-2); color: var(--text);
+  }
+  .voice-btn.talk.active { background: var(--ok); color: #06210a; }
+  .voice-btn.mute.active { background: var(--err); color: #2a0705; }
+  .voice-btn.leave { background: var(--err); color: #fff; }
+
+  /* Profile tab */
+  .profile-body { padding: 24px 20px; }
+  .profile-avatar-row { display: flex; flex-direction: column; align-items: center; margin-bottom: 24px; }
+  .profile-avatar {
+    width: 84px; height: 84px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+    display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 700; color: #1a1200;
     margin-bottom: 10px;
-    color: var(--accent);
-    word-break: break-all;
   }
-  .id-copy-hint {
-    font-size: 12px;
-    color: var(--text-muted);
-    margin-bottom: 22px;
+  .profile-name-row { display: flex; align-items: center; gap: 8px; font-family: 'Fraunces', serif; font-size: 19px; font-weight: 600; }
+  .emoji-picker-btn { font-size: 18px; background: var(--panel-2); border: 1px solid var(--panel-border); border-radius: 10px; width: 34px; height: 34px; cursor: pointer; }
+  .emoji-popup { display: none; flex-wrap: wrap; gap: 8px; background: var(--panel-2); border: 1px solid var(--panel-border); border-radius: 14px; padding: 10px; margin-top: 10px; max-width: 260px; }
+  .emoji-popup.show { display: flex; }
+  .emoji-popup span { font-size: 20px; cursor: pointer; padding: 4px; }
+
+  .profile-field { margin-bottom: 16px; }
+  .profile-field label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+  .id-display-row { display: flex; gap: 8px; align-items: center; }
+  .id-display-row input { font-family: 'JetBrains Mono', monospace; color: var(--accent); }
+  .copy-btn { background: var(--panel-2); border: 1px solid var(--panel-border); color: var(--text); border-radius: 12px; padding: 12px 14px; cursor: pointer; font-size: 13px; white-space: nowrap; }
+  .save-hint { font-size: 12px; color: var(--ok); text-align: center; margin-top: 4px; min-height: 15px; }
+
+  /* ============ CHAT DETAIL SCREEN (Saved messages etc) ============ */
+  #screenChat { background: var(--bg); }
+  .chat-header { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--panel-border); flex-shrink: 0; }
+  .back-btn { background: none; border: none; color: var(--text); font-size: 20px; cursor: pointer; padding: 4px 8px; }
+  .chat-header-name { font-weight: 600; font-size: 15.5px; }
+  .messages-area { flex: 1; overflow-y: auto; padding: 14px 14px 6px; display: flex; flex-direction: column; gap: 8px; }
+
+  .msg-bubble { max-width: 78%; align-self: flex-end; background: var(--accent); color: #1a1200; border-radius: 16px 16px 4px 16px; padding: 9px 12px; font-size: 14.5px; position: relative; animation: bubbleIn 0.2s ease; }
+  @keyframes bubbleIn { 0% { transform: scale(0.85); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+  .msg-bubble.photo { padding: 6px; }
+  .msg-bubble.photo img { max-width: 100%; border-radius: 12px; display: block; }
+  .msg-bubble.voice { display: flex; align-items: center; gap: 8px; min-width: 180px; }
+  .voice-play-btn { width: 30px; height: 30px; border-radius: 50%; background: rgba(0,0,0,0.15); border: none; color: #1a1200; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .waveform { display: flex; align-items: center; gap: 2px; flex: 1; height: 22px; }
+  .waveform span { width: 3px; background: rgba(26,18,0,0.5); border-radius: 2px; }
+  .msg-meta { display: flex; justify-content: flex-end; align-items: center; gap: 4px; margin-top: 3px; font-size: 10.5px; color: rgba(26,18,0,0.55); }
+  .msg-time { }
+  .ticks { font-size: 11px; }
+  .ticks.pending { color: rgba(26,18,0,0.4); }
+
+  .composer { display: flex; align-items: flex-end; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--panel-border); flex-shrink: 0; background: var(--panel); }
+  .composer textarea {
+    flex: 1; resize: none; background: var(--bg-2); border: 1.5px solid var(--panel-border);
+    border-radius: 18px; padding: 10px 14px; color: var(--text); font-size: 14.5px; font-family: 'Inter', sans-serif;
+    max-height: 100px; outline: none;
   }
-  .id-copy-hint.copied { color: var(--ok); }
+  .composer-btn { background: var(--panel-2); border: none; color: var(--text); width: 42px; height: 42px; border-radius: 50%; cursor: pointer; font-size: 18px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .composer-btn.send { background: var(--accent); color: #1a1200; }
+
+  .recording-bar { display: none; align-items: center; gap: 10px; padding: 10px 16px; background: var(--panel); border-top: 1px solid var(--panel-border); }
+  .recording-bar.active { display: flex; }
+  .rec-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--err); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .rec-timer { font-family: 'JetBrains Mono', monospace; font-size: 14px; flex: 1; }
+  .rec-cancel, .rec-send { border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 15px; }
+  .rec-cancel { background: var(--panel-2); color: var(--err); }
+  .rec-send { background: var(--accent); color: #1a1200; }
 </style>
 </head>
 <body>
 
-<div class="card">
+<div id="root">
 
-  <div class="logo-row">
-    <div class="logo-dot"></div>
-    <div class="logo-text">UniHomos</div>
-  </div>
-
-  <!-- ===================== TABS ===================== -->
-  <div class="tabs" id="tabsRow">
-    <button class="tab-btn active" id="tabLogin">Вхід</button>
-    <button class="tab-btn" id="tabRegister">Реєстрація</button>
-  </div>
-
-  <!-- ===================== LOGIN PANEL ===================== -->
-  <div class="panel active" id="panelLogin">
-    <h1>З поверненням</h1>
-    <p class="subtitle">Введіть @хендл або ваш ID та пароль.</p>
-
-    <div class="field">
-      <label>Хендл або ID</label>
-      <div class="input-wrap">
-        <input type="text" id="loginIdentifier" placeholder="@handle або ABCD1234WXYZ" maxlength="24">
+  <!-- ======================= AUTH SCREEN ======================= -->
+  <div class="screen active" id="screenAuth">
+    <div class="card">
+      <div class="logo-row">
+        <div class="logo-dot"></div>
+        <div class="logo-text">FreeUniHomos</div>
       </div>
-    </div>
 
-    <div class="field">
-      <label>Пароль</label>
-      <div class="input-wrap">
-        <input type="password" id="loginPassword" placeholder="Пароль" maxlength="64">
+      <div class="tabs" id="authTabsRow">
+        <button class="tab-btn active" id="tabLogin">Вхід</button>
+        <button class="tab-btn" id="tabRegister">Реєстрація</button>
       </div>
-    </div>
 
-    <button class="primary" id="loginBtn">Увійти</button>
-    <div class="form-msg" id="loginMsg"></div>
-  </div>
-
-  <!-- ===================== REGISTER PANEL ===================== -->
-  <div class="panel" id="panelRegister">
-    <h1>Створити акаунт</h1>
-    <p class="subtitle">Так вас будуть бачити і знаходити інші.</p>
-
-    <div class="field">
-      <label>Ім'я</label>
-      <div class="input-wrap">
-        <input type="text" id="regName" placeholder="напр. Іван" maxlength="30">
+      <div class="auth-panel active" id="panelLogin">
+        <h1>З поверненням</h1>
+        <p class="subtitle">Введіть @хендл або ваш ID та пароль.</p>
+        <div class="field">
+          <label>Хендл або ID</label>
+          <input type="text" id="loginIdentifier" placeholder="@handle або ABCD1234WXYZ" maxlength="24">
+        </div>
+        <div class="field">
+          <label>Пароль</label>
+          <input type="password" id="loginPassword" placeholder="Пароль" maxlength="64">
+        </div>
+        <button class="primary" id="loginBtn">Увійти</button>
+        <div class="form-msg" id="loginMsg"></div>
       </div>
-      <div class="hint" id="nameHint">Будь-яка мова</div>
-    </div>
 
-    <div class="field">
-      <label>Хендл</label>
-      <div class="input-wrap">
-        <span class="at-sign">@</span>
-        <input type="text" class="mono" id="regHandle" placeholder="ivan_92" maxlength="24">
+      <div class="auth-panel" id="panelRegister">
+        <h1>Створити акаунт</h1>
+        <p class="subtitle">Так вас будуть бачити і знаходити інші в FreeUniHomos.</p>
+        <div class="field">
+          <label>Ім'я</label>
+          <input type="text" id="regName" placeholder="напр. Іван" maxlength="30">
+        </div>
+        <div class="field">
+          <label>Хендл</label>
+          <div class="input-wrap">
+            <span class="at-sign">@</span>
+            <input type="text" class="mono" id="regHandle" placeholder="ivan_92" maxlength="24">
+          </div>
+          <div class="hint" id="handleHint">Тільки латинські літери, цифри, _ та -</div>
+        </div>
+        <div class="field">
+          <label>Пароль</label>
+          <input type="password" id="regPassword" placeholder="Мінімум 4 символи" maxlength="64">
+        </div>
+        <button class="primary" id="registerBtn" disabled>Зареєструватися</button>
+        <div class="form-msg" id="registerMsg"></div>
       </div>
-      <div class="hint" id="handleHint">Тільки латинські літери, цифри, _ та -</div>
-    </div>
-
-    <div class="field">
-      <label>Пароль</label>
-      <div class="input-wrap">
-        <input type="password" id="regPassword" placeholder="Мінімум 4 символи" maxlength="64">
-      </div>
-    </div>
-
-    <button class="primary" id="registerBtn" disabled>Зареєструватися</button>
-    <div class="form-msg" id="registerMsg"></div>
-  </div>
-
-  <!-- ===================== SUCCESS PANEL (shows generated ID) ===================== -->
-  <div class="panel" id="panelSuccess">
-    <div class="success-box">
-      <div class="success-check">✓</div>
-      <h1 style="margin-bottom:16px;">Акаунт створено!</h1>
-      <div class="id-label">Ваш особистий ID (запам'ятайте або збережіть — він знадобиться для входу):</div>
-      <div class="id-box" id="generatedId">—</div>
-      <div class="id-copy-hint" id="copyHint">Натисніть, щоб скопіювати</div>
-      <button class="primary" id="continueAfterRegister">Продовжити</button>
     </div>
   </div>
 
-</div>
+  <!-- ======================= LOADING / RESULT SCREEN ======================= -->
+  <div class="screen" id="screenLoading">
+    <div id="loadingView">
+      <div class="spinner"></div>
+      <div id="loadingText">З'єднуємось з сервером...</div>
+    </div>
+    <div id="resultView" style="display:none;">
+      <div class="result-icon" id="resultIcon"></div>
+      <h1 id="resultTitle" style="margin-bottom:10px;"></h1>
+      <div id="resultReason"></div>
+      <button class="primary" id="resultRetryBtn" style="display:none;">Спробувати ще раз</button>
+    </div>
+  </div>
 
-<script>
-  // Адреса нашого сервера на Render
-  const API_BASE = 'https://freeunihomos.onrender.com';
+  <!-- ======================= MAIN APP SCREEN ======================= -->
+  <div class="screen" id="screenApp">
+    <div class="topbar">
+      <div class="logo-dot"></div>
+      <div class="logo-text">FreeUniHomos</div>
+    </div>
 
-  const tabLogin = document.getElementById('tabLogin');
-  const tabRegister = document.getElementById('tabRegister');
-  const panelLogin = document.getElementById('panelLogin');
-  const panelRegister = document.getElementById('panelRegister');
-  const panelSuccess = document.getElementById('panelSuccess');
-  const tabsRow = document.getElementById('tabsRow');
+    <div class="app-body">
 
-  function showPanel(which) {
-    [panelLogin, panelRegister, panelSuccess].forEach(p => p.classList.remove('active'));
-    if (which === 'login') { panelLogin.classList.add('active'); tabsRow.style.display = 'flex'; }
-    if (which === 'register') { panelRegister.classList.add('active'); tabsRow.style.display = 'flex'; }
-    if (which === 'success') { panelSuccess.classList.add('active'); tabsRow.style.display = 'none'; }
-  }
+      <!-- TAB 1: CHATS -->
+      <div class="tab-page active" id="pageChats">
+        <div class="chat-list" id="chatListContainer"></div>
+      </div>
 
-  tabLogin.addEventListener('click', () => {
-    tabLogin.classList.add('active');
-    tabRegister.classList.remove('active');
-    showPanel('login');
-  });
-  tabRegister.addEventListener('click', () => {
-    tabRegister.classList.add('active');
-    tabLogin.classList.remove('active');
-    showPanel('register');
-  });
+      <!-- TAB 2: HOME -->
+      <div class="tab-page" id="pageHome">
+        <div class="home-search">
+          <div class="search-input-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="homeSearchInput" placeholder="Пошук за @хендлом або ID">
+          </div>
+        </div>
+        <div class="search-results" id="homeSearchResults"></div>
 
-  // ---------------- REGISTER FORM ----------------
-  const regName = document.getElementById('regName');
-  const regHandle = document.getElementById('regHandle');
-  const regPassword = document.getElementById('regPassword');
-  const registerBtn = document.getElementById('registerBtn');
-  const registerMsg = document.getElementById('registerMsg');
-  const nameHint = document.getElementById('nameHint');
-  const handleHint = document.getElementById('handleHint');
+        <div class="home-actions" id="homeActions">
+          <div class="action-card" id="cardChannel" data-kind="channel">
+            <div class="a-icon">📢</div>
+            <div class="a-label a-collapsed-hint">Створити канал</div>
+            <div class="action-form">
+              <div class="field"><label>Назва каналу</label><input type="text" id="channelName" maxlength="40" placeholder="напр. Новини двору"></div>
+              <div class="field"><label>Хендл</label>
+                <div class="input-wrap"><span class="at-sign">@channel</span><input type="text" class="mono" id="channelHandle" style="padding-left:78px" maxlength="20" placeholder="myfeed"></div>
+              </div>
+              <div class="action-btns-row">
+                <button class="btn-cancel" onclick="collapseCard('cardChannel', event)">Скасувати</button>
+                <button class="btn-create" id="createChannelBtn" disabled onclick="createEntity('channel', event)">Створити</button>
+              </div>
+            </div>
+          </div>
 
-  function sanitizeHandle() {
-    const raw = regHandle.value;
-    const clean = raw.replace(/[^A-Za-z0-9_-]/g, '');
-    regHandle.value = clean;
-    handleHint.textContent = clean !== raw
-      ? 'Тільки латинські літери, цифри, _ та -'
-      : 'Тільки латинські літери, цифри, _ та -';
-    handleHint.classList.toggle('error', clean !== raw);
-  }
-
-  function updateRegisterButton() {
-    const nameOk = regName.value.trim().length >= 2;
-    const handleOk = regHandle.value.length >= 3;
-    const passOk = regPassword.value.length >= 4;
-    registerBtn.disabled = !(nameOk && handleOk && passOk);
-  }
-
-  regName.addEventListener('input', updateRegisterButton);
-  regHandle.addEventListener('input', () => { sanitizeHandle(); updateRegisterButton(); });
-  regPassword.addEventListener('input', updateRegisterButton);
-
-  registerBtn.addEventListener('click', async () => {
-    registerMsg.textContent = 'Реєструємо...';
-    registerMsg.className = 'form-msg loading';
-    registerBtn.disabled = true;
-
-    try {
-      const res = await fetch(API_BASE + '/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: regName.value.trim(),
-          handle: regHandle.value.trim(),
-          password: regPassword.value
-        })
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        registerMsg.textContent = data.detail || 'Помилка реєстрації';
-        registerMsg.className = 'form-msg error';
-        updateRegisterButton();
-        return;
-      }
-
-      // Зберігаємо дані користувача локально (в браузері), щоб не питати логін щоразу
-      localStorage.setItem('unihomos_user', JSON.stringify(data));
-
-      document.getElementById('generatedId').textContent = data.public_id;
-      registerMsg.textContent = '';
-      showPanel('success');
-
-    } catch (err) {
-      registerMsg.textContent = 'Немає з\'єднання із сервером. Спробуйте ще раз.';
-      registerMsg.className = 'form-msg error';
-      updateRegisterButton();
-    }
-  });
-
-  // Копіювання ID по кліку
-  document.getElementById('generatedId').addEventListener('click', () => {
-    const idText = document.getElementById('generatedId').textContent;
-    navigator.clipboard.writeText(idText).then(() => {
-      const hint = document.getElementById('copyHint');
-      hint.textContent = 'Скопійовано ✓';
-      hint.classList.add('copied');
-    });
-  });
-
-  document.getElementById('continueAfterRegister').addEventListener('click', () => {
-    // Тут пізніше буде перехід у сам додаток (app.html)
-    window.location.href = 'app.html';
-  });
-
-  // ---------------- LOGIN FORM ----------------
-  const loginIdentifier = document.getElementById('loginIdentifier');
-  const loginPassword = document.getElementById('loginPassword');
-  const loginBtn = document.getElementById('loginBtn');
-  const loginMsg = document.getElementById('loginMsg');
-
-  loginBtn.addEventListener('click', async () => {
-    if (!loginIdentifier.value.trim() || !loginPassword.value) {
-      loginMsg.textContent = 'Заповніть обидва поля';
-      loginMsg.className = 'form-msg error';
-      return;
-    }
-
-    loginMsg.textContent = 'Входимо...';
-    loginMsg.className = 'form-msg loading';
-    loginBtn.disabled = true;
-
-    try {
-      const res = await fetch(API_BASE + '/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          identifier: loginIdentifier.value.trim(),
-          password: loginPassword.value
-        })
-      });
-
-      const data = await res.json();
-      loginBtn.disabled = false;
-
-      if (!res.ok) {
-        loginMsg.textContent = data.detail || 'Невірний хендл/ID або пароль';
-        loginMsg.className = 'form-msg error';
-        return;
-      }
-
-      localStorage.setItem('unihomos_user', JSON.stringify(data));
-      loginMsg.textContent = '';
-      window.location.href = 'app.html';
-
-    } catch (err) {
-      loginBtn.disabled = false;
-      loginMsg.textContent = 'Немає з\'єднання із сервером. Спробуйте ще раз.';
-      loginMsg.className = 'form-msg error';
-    }
-  });
-
-  // Якщо користувач уже заходив раніше (дані є в браузері) — одразу в додаток
-  const savedUser = localStorage.getItem('unihomos_user');
-  if (savedUser) {
-    // Не робимо авто-редірект тут навмисно, щоб можна було спокійно тестувати екран.
-    // (Коли будемо підключати реальний перехід між сторінками — розкоментуємо.)
-    // window.location.href = 'app.html';
-  }
-</script>
-
-</body>
-</html>
+          <div class="action-card" id="cardChat" data-kind="chat">
+            <div class="a-icon">💬</div>
+            <div class="a-label a-collapsed-hint">Створити чат</div>
+            <div class="action-form">
+              <div class="field"><label>Назва чату</label><i
