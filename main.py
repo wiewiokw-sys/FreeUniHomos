@@ -4,8 +4,8 @@ UniHomos — серверна частина (backend)
 
 Що робить цей файл:
 - Реєстрація нового користувача (ім'я + @хендл + пароль)
-- Генерує унікальний публічний ID (12 символів: ВЕЛИКІ латинські літери + цифри)
-- Вхід в акаунт (по @хендлу АБО по ID + пароль)
+- Хендл (@...) — це і є унікальний ID користувача, окремого ID більше немає
+- Вхід в акаунт (по @хендлу + пароль)
 - Зберігає користувача в базу даних MongoDB (пароль зберігається НЕ як текст,
   а як хеш — навіть якщо хтось побачить базу даних, пароль вкрасти не можна)
 - Дозволяє знайти користувача/канал/чат за хендлом (для пошуку)
@@ -22,7 +22,6 @@ import hashlib
 import os
 import re
 import secrets
-import string
 import uuid
 
 from fastapi import FastAPI, HTTPException
@@ -55,16 +54,17 @@ app.add_middleware(
 
 # ---------------------------------------------------------------------------
 # 3. Правила валідації хендла
-#    (тільки латинські літери, цифри, "_" та "-", 3-24 символи)
+#    (тільки латинські літери, цифри, "_" та "-", 3-20 символів)
+#    Хендл — це одночасно і унікальний ID користувача.
 # ---------------------------------------------------------------------------
-HANDLE_PATTERN = re.compile(r"^[A-Za-z0-9_-]{3,24}$")
+HANDLE_PATTERN = re.compile(r"^[A-Za-z0-9_-]{3,20}$")
 
 
 def validate_handle(handle: str):
     if not HANDLE_PATTERN.match(handle):
         raise HTTPException(
             status_code=400,
-            detail="Handle must be 3-24 characters: Latin letters, numbers, _ or - only",
+            detail="Handle must be 3-20 characters: Latin letters, numbers, _ or - only",
         )
 
 
@@ -87,22 +87,7 @@ def verify_password(password: str, salt: str, expected_hash: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# 5. Публічний ID: 12 символів, ВЕЛИКІ латинські літери + цифри, унікальний.
-#    Це те, що можна показати іншим, щоб вони могли вас знайти /
-#    використати замість хендла для входу.
-# ---------------------------------------------------------------------------
-ID_ALPHABET = string.ascii_uppercase + string.digits
-
-
-def generate_public_id() -> str:
-    while True:
-        candidate = "".join(secrets.choice(ID_ALPHABET) for _ in range(12))
-        if not users.find_one({"public_id": candidate}):
-            return candidate
-
-
-# ---------------------------------------------------------------------------
-# 6. Моделі даних (те, що приходить від додатку / йде у відповідь)
+# 5. Моделі даних (те, що приходить від додатку / йде у відповідь)
 # ---------------------------------------------------------------------------
 class RegisterRequest(BaseModel):
     name: str
@@ -112,25 +97,23 @@ class RegisterRequest(BaseModel):
 
 class RegisterResponse(BaseModel):
     user_id: str
-    public_id: str
     name: str
     handle: str
 
 
 class LoginRequest(BaseModel):
-    identifier: str   # @хендл АБО 12-значний public_id
+    identifier: str   # @хендл (він же ID)
     password: str
 
 
 class LoginResponse(BaseModel):
     user_id: str
-    public_id: str
     name: str
     handle: str
 
 
 # ---------------------------------------------------------------------------
-# 7. Маршрути (endpoints)
+# 6. Маршрути (endpoints)
 # ---------------------------------------------------------------------------
 
 @app.get("/")
@@ -142,7 +125,7 @@ def health_check():
 @app.post("/register", response_model=RegisterResponse)
 def register_user(payload: RegisterRequest):
     name = payload.name.strip()
-    handle = payload.handle.strip().lower()
+    handle = payload.handle.strip().lstrip("@").lower()
     password = payload.password
 
     if len(name) < 2:
@@ -158,30 +141,25 @@ def register_user(payload: RegisterRequest):
         raise HTTPException(status_code=409, detail="This handle is already taken")
 
     user_id = str(uuid.uuid4())
-    public_id = generate_public_id()
     password_hash, salt = hash_password(password)
 
     users.insert_one({
         "user_id": user_id,
-        "public_id": public_id,
         "name": name,
         "handle": handle,
         "password_hash": password_hash,
         "salt": salt,
     })
 
-    return RegisterResponse(user_id=user_id, public_id=public_id, name=name, handle=handle)
+    return RegisterResponse(user_id=user_id, name=name, handle=handle)
 
 
 @app.post("/login", response_model=LoginResponse)
 def login_user(payload: LoginRequest):
-    identifier = payload.identifier.strip().lstrip("@")
+    identifier = payload.identifier.strip().lstrip("@").lower()
     password = payload.password
 
-    # Шукаємо або по хендлу (нечутливо до регістру), або по public_id
-    user = users.find_one({"handle": identifier.lower()})
-    if not user:
-        user = users.find_one({"public_id": identifier.upper()})
+    user = users.find_one({"handle": identifier})
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -191,7 +169,6 @@ def login_user(payload: LoginRequest):
 
     return LoginResponse(
         user_id=user["user_id"],
-        public_id=user["public_id"],
         name=user["name"],
         handle=user["handle"],
     )
