@@ -31,6 +31,9 @@ saved = db["saved_messages"]
 entities = db["entities"]
 entity_messages = db["entity_messages"]
 voice_ephemeral = db["voice_ephemeral"]
+stories = db["stories"]
+story_reactions = db["story_reactions"]
+story_comments = db["story_comments"]
 
 app = FastAPI(title="FreeUniHomos API")
 
@@ -101,6 +104,9 @@ def public_user(u: dict) -> dict:
         "tag_emoji": u.get("tag_emoji", ""),
         "online": (time.time() - last_seen) < ONLINE_SECONDS if last_seen else False,
         "last_seen": last_seen,
+        "allow_view_posts": u.get("allow_view_posts", True),
+        "allow_react_posts": u.get("allow_react_posts", True),
+        "allow_comment_posts": u.get("allow_comment_posts", True),
     }
 
 
@@ -203,13 +209,6 @@ class DeleteMessageRequest(BaseModel):
     requester_handle: str
 
 
-class ReactRequest(BaseModel):
-    message_id: str
-    reactor_handle: str
-    emoji: str
-    scope: str = "dm"  # dm | entity | saved
-
-
 class UpdateProfileRequest(BaseModel):
     handle: str
     new_name: str = ""
@@ -245,6 +244,40 @@ class VoiceEphemeralRequest(BaseModel):
     from_handle: str
     content: str
     kind: str = "emoji"
+
+
+class CreateStoryRequest(BaseModel):
+    owner_handle: str
+    photo: str = ""
+    text: str = ""
+
+
+class StoryReactRequest(BaseModel):
+    story_id: str
+    handle: str
+
+
+class StoryCommentRequest(BaseModel):
+    story_id: str
+    handle: str
+    text: str
+
+
+class DeleteStoryRequest(BaseModel):
+    story_id: str
+    handle: str
+
+
+class DeleteStoryCommentRequest(BaseModel):
+    comment_id: str
+    handle: str
+
+
+class UpdatePostSettingsRequest(BaseModel):
+    handle: str
+    allow_view_posts: bool = True
+    allow_react_posts: bool = True
+    allow_comment_posts: bool = True
 
 
 @app.get("/")
@@ -420,7 +453,6 @@ def send_message(payload: SendMessageRequest):
         "status": "sent", "edited": False,
         "reply_to": payload.reply_to, "reply_preview": payload.reply_preview,
         "forwarded_from": payload.forwarded_from,
-        "reactions": [],
     })
     return {"message_id": message_id, "status": "sent"}
 
@@ -510,7 +542,6 @@ def send_saved(payload: SavedMessageRequest):
         "time": payload.time, "duration": payload.duration, "edited": False,
         "reply_to": payload.reply_to, "reply_preview": payload.reply_preview,
         "forwarded_from": payload.forwarded_from,
-        "reactions": [],
     })
     return {"message_id": message_id}
 
@@ -589,255 +620,4 @@ def join_entity(payload: JoinEntityRequest):
     if not entity:
         raise HTTPException(status_code=404, detail="Not found")
 
-    if entity.get("kind") == "voice":
-        max_m = entity.get("max_members", 10)
-        members = entity.get("members") or []
-        if member not in members and len(members) >= max_m:
-            raise HTTPException(status_code=403, detail="Voice room is full")
-
-    entities.update_one({"handle": handle}, {"$addToSet": {"members": member}})
-    entity = entities.find_one({"handle": handle}, {"_id": 0})
-    return entity
-
-
-@app.post("/entities/leave")
-def leave_entity(payload: JoinEntityRequest):
-    handle = clean_handle(payload.handle)
-    member = clean_handle(payload.member_handle)
-    entities.update_one({"handle": handle}, {"$pull": {"members": member}})
-    entities.update_one({"handle": handle}, {"$unset": {f"talking.{member}": ""}})
-    return {"status": "ok"}
-
-
-@app.get("/entities/mine/{handle}")
-def my_entities(handle: str):
-    handle = clean_handle(handle)
-    docs = list(entities.find({"members": handle}, {"_id": 0}))
-    return docs
-
-
-@app.get("/entities/{handle}")
-def get_entity(handle: str):
-    entity = entities.find_one({"handle": clean_handle(handle)}, {"_id": 0})
-    if not entity:
-        raise HTTPException(status_code=404, detail="Not found")
-    return entity
-
-
-@app.get("/entities/voices/list")
-def list_voices():
-    docs = list(entities.find({"kind": "voice"}, {"_id": 0}))
-    result = []
-    for e in docs:
-        members = e.get("members") or []
-        talking = e.get("talking") or {}
-        result.append({
-            "entity_id": e.get("entity_id"),
-            "name": e["name"],
-            "handle": e["handle"],
-            "member_count": len(members),
-            "max_members": e.get("max_members", 10),
-            "talking_count": sum(1 for v in talking.values() if v),
-        })
-    return result
-
-
-@app.post("/entities/voice/talk")
-def voice_talk(payload: VoiceTalkRequest):
-    handle = clean_handle(payload.handle)
-    member = clean_handle(payload.member_handle)
-    entity = entities.find_one({"handle": handle})
-    if not entity or entity.get("kind") != "voice":
-        raise HTTPException(status_code=404, detail="Voice not found")
-    entities.update_one(
-        {"handle": handle},
-        {"$set": {f"talking.{member}": bool(payload.talking)}},
-    )
-    touch_presence(member)
-    return {"status": "ok"}
-
-
-@app.get("/entities/voice/state/{handle}")
-def voice_state(handle: str):
-    handle = clean_handle(handle)
-    entity = entities.find_one({"handle": handle})
-    if not entity or entity.get("kind") != "voice":
-        raise HTTPException(status_code=404, detail="Voice not found")
-
-    cleanup_ephemeral(handle)
-    members = entity.get("members") or []
-    talking = entity.get("talking") or {}
-    lookup = user_lookup_map(set(members))
-    member_list = []
-    for m in members:
-        info = lookup.get(m, {})
-        member_list.append({
-            "handle": m,
-            "name": info.get("name", m),
-            "avatar": info.get("avatar", ""),
-            "tag_emoji": info.get("tag_emoji", ""),
-            "talking": bool(talking.get(m)),
-            "online": info.get("online", False),
-        })
-
-    eph = list(voice_ephemeral.find(
-        {"entity_handle": handle, "expires_at": {"$gt": time.time()}},
-        {"_id": 0},
-    ).sort("created_at", 1))
-    for e in eph:
-        info = lookup.get(e["from_handle"], {})
-        e["from_name"] = info.get("name", e["from_handle"])
-        e["from_avatar"] = info.get("avatar", "")
-
-    return {
-        "name": entity["name"],
-        "handle": entity["handle"],
-        "max_members": entity.get("max_members", 10),
-        "members": member_list,
-        "ephemeral": eph,
-    }
-
-
-@app.post("/entities/voice/ephemeral")
-def send_ephemeral(payload: VoiceEphemeralRequest):
-    handle = clean_handle(payload.entity_handle)
-    from_handle = clean_handle(payload.from_handle)
-    content = (payload.content or "").strip()
-    if not content or len(content) > 100:
-        raise HTTPException(status_code=400, detail="Content must be 1-100 characters")
-    entity = entities.find_one({"handle": handle})
-    if not entity or entity.get("kind") != "voice":
-        raise HTTPException(status_code=404, detail="Voice not found")
-    if from_handle not in (entity.get("members") or []):
-        raise HTTPException(status_code=403, detail="Not a member")
-
-    cleanup_ephemeral(handle)
-    msg_id = str(uuid.uuid4())
-    now = time.time()
-    doc = {
-        "message_id": msg_id,
-        "entity_handle": handle,
-        "from_handle": from_handle,
-        "kind": payload.kind if payload.kind in ("emoji", "text") else "text",
-        "content": content,
-        "created_at": now,
-        "expires_at": now + EPHEMERAL_TTL,
-    }
-    voice_ephemeral.insert_one(doc)
-    touch_presence(from_handle)
-    return {"message_id": msg_id, "expires_at": doc["expires_at"]}
-
-
-@app.post("/entities/messages/send")
-def send_entity_message(payload: EntityMessageRequest):
-    handle = clean_handle(payload.entity_handle)
-    entity = entities.find_one({"handle": handle})
-    if not entity:
-        raise HTTPException(status_code=404, detail="Entity not found")
-    touch_presence(payload.from_handle)
-    message_id = str(uuid.uuid4())
-    entity_messages.insert_one({
-        "message_id": message_id, "entity_handle": handle,
-        "from_handle": clean_handle(payload.from_handle),
-        "type": payload.type, "content": payload.content,
-        "time": payload.time, "duration": payload.duration, "edited": False,
-        "reply_to": payload.reply_to, "reply_preview": payload.reply_preview,
-        "forwarded_from": payload.forwarded_from,
-        "reactions": [],
-    })
-    return {"message_id": message_id}
-
-
-@app.get("/entities/messages/{handle}")
-def get_entity_messages(handle: str):
-    docs = list(entity_messages.find({"entity_handle": clean_handle(handle)}, {"_id": 0}).sort("_id", 1))
-    senders = user_lookup_map({d["from_handle"] for d in docs})
-    for d in docs:
-        info = senders.get(d["from_handle"], {})
-        d["from_name"] = info.get("name", d["from_handle"])
-        d["from_avatar"] = info.get("avatar", "")
-        d["from_tag_emoji"] = info.get("tag_emoji", "")
-    return docs
-
-
-@app.post("/entities/messages/edit")
-def edit_entity_message(payload: EditMessageRequest):
-    doc = entity_messages.find_one({"message_id": payload.message_id})
-    if not doc:
-        raise HTTPException(status_code=404, detail="Message not found")
-    if doc["from_handle"] != clean_handle(payload.editor_handle):
-        raise HTTPException(status_code=403, detail="Not yours")
-    entity_messages.update_one({"message_id": payload.message_id}, {"$set": {"content": payload.new_content, "edited": True}})
-    return {"status": "ok"}
-
-
-@app.post("/entities/messages/delete")
-def delete_entity_message(payload: DeleteMessageRequest):
-    doc = entity_messages.find_one({"message_id": payload.message_id})
-    if not doc:
-        raise HTTPException(status_code=404, detail="Message not found")
-    if doc["from_handle"] != clean_handle(payload.requester_handle):
-        raise HTTPException(status_code=403, detail="Not yours")
-    entity_messages.delete_one({"message_id": payload.message_id})
-    return {"status": "ok"}
-
-
-@app.post("/messages/react")
-def react_to_message(payload: ReactRequest):
-    """Add or toggle a reaction. Max 3 reactions per message. Any emoji allowed."""
-    emoji = (payload.emoji or "").strip()
-    if not emoji or len(emoji) > 8:
-        raise HTTPException(status_code=400, detail="Invalid emoji")
-    reactor = clean_handle(payload.reactor_handle)
-    scope = (payload.scope or "dm").lower()
-
-    if scope == "saved":
-        col = saved
-    elif scope == "entity":
-        col = entity_messages
-    else:
-        col = messages
-
-    doc = col.find_one({"message_id": payload.message_id})
-    if not doc:
-        raise HTTPException(status_code=404, detail="Message not found")
-
-    reactions = list(doc.get("reactions") or [])
-    # Toggle: if same user already reacted with this emoji — remove it
-    existing = next((r for r in reactions if r.get("from_handle") == reactor and r.get("emoji") == emoji), None)
-    if existing:
-        reactions = [r for r in reactions if not (r.get("from_handle") == reactor and r.get("emoji") == emoji)]
-    else:
-        # Remove previous reaction from this user (one reaction per user) then add
-        reactions = [r for r in reactions if r.get("from_handle") != reactor]
-        if len(reactions) >= 3:
-            raise HTTPException(status_code=400, detail="Max 3 reactions on a message")
-        reactions.append({"emoji": emoji, "from_handle": reactor})
-
-    col.update_one({"message_id": payload.message_id}, {"$set": {"reactions": reactions}})
-    touch_presence(reactor)
-    return {"status": "ok", "reactions": reactions}
-
-
-@app.get("/search")
-def search_all(q: str):
-    q = q.strip().lstrip("@").lower()
-    if not q:
-        return {"people": [], "entities": []}
-
-    now = time.time()
-    people = list(users.find(
-        {"handle": {"$regex": "^" + re.escape(q)}},
-        {"_id": 0, "password_hash": 0, "salt": 0},
-    ).limit(15))
-    for p in people:
-        ls = p.get("last_seen", 0)
-        p["online"] = (now - ls) < ONLINE_SECONDS if ls else False
-        p.pop("last_seen", None)
-
-    ent = list(entities.find(
-        {"handle": {"$regex": "^" + re.escape(q)}},
-        {"_id": 0},
-    ).limit(15))
-
-    return {"people": people, "entities": ent}
+    if entity.get("kind") == "v
